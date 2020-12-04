@@ -1,60 +1,55 @@
 version: 2.1
 
-aliases:
-  # Workflow filters
-  - &filter-only-master
-    branches:
-      only: master
-
 jobs:
-  scan-docker-image:
-    description: "Scans a docker image for vulnerabilities using trivy"
-    parameters:
-      image:
-        type: string
-      tag:
-        type: string
+  # Hub added jobs
+  build-and-push-hub-grafana-image:
+    description: Build hub's grafana image
     docker:
-      - image: circleci/buildpack-deps:stretch
+      - image: cimg/node:12.19.0
+    resource_class: large
+    environment:
+      ECR_REPOSITORY_BASE: 922490317956.dkr.ecr.ap-southeast-2.amazonaws.com
+      AWS_DEFAULT_REGION: ap-southeast-2
+      IMAGE: reporting-fulcrum
+      VERSION: << pipeline.git.tag >>
     steps:
-      - setup_remote_docker
-      - restore_cache:
-          key: vulnerability-db
+      - checkout
+      - setup_remote_docker:
+          version: 19.03.13
+          docker_layer_caching: true
+      - aws-cli/setup
       - run:
-          name: Install trivy
+          name: Login to Hub's ECR
           command: |
-            VERSION=$(
-                curl --silent "https://api.github.com/repos/aquasecurity/trivy/releases/latest" | \
-                grep '"tag_name":' | \
-                sed -E 's/.*"v([^"]+)".*/\1/'
-            )
+            aws ecr get-login-password | docker login --username AWS --password-stdin 922490317956.dkr.ecr.ap-southeast-2.amazonaws.com
+      - run:
+          name: Build Hub Grafana docker's image
+          no_output_timeout: 30m
+          command: |
+            echo "Building Hub Grafana $VERSION"
 
-            wget https://github.com/aquasecurity/trivy/releases/download/v${VERSION}/trivy_${VERSION}_Linux-64bit.tar.gz
-            tar zxvf trivy_${VERSION}_Linux-64bit.tar.gz
-            sudo mv trivy /usr/local/bin
+            docker build -f Dockerfile -t $VERSION -t latest .
       - run:
-          name: Clear trivy cache
-          command: trivy --clear-cache
+          name: Docker Tag Hub Grafana Image
+          command: |
+            docker tag $VERSION $ECR_REPOSITORY_BASE/$IMAGE:$VERSION
+            docker tag latest $ECR_REPOSITORY_BASE/$IMAGE:latest
       - run:
-          name: Scan Docker image for unkown/low/medium vulnerabilities
-          command: trivy --exit-code 0 --severity UNKNOWN,LOW,MEDIUM << parameters.image >>:<< parameters.tag >>
-      - run:
-          name: Scan Docker image for high/critical vulnerabilities
-          command: trivy --exit-code 1 --severity HIGH,CRITICAL << parameters.image >>:<< parameters.tag >>
-      - save_cache:
-          key: vulnerability-db
-          paths:
-            - $HOME/.cache/trivy
+          name: Docker Push Hub Grafana Image to ECR
+          command: |
+            docker push $ECR_REPOSITORY_BASE/$IMAGE:$VERSION
+            docker push $ECR_REPOSITORY_BASE/$IMAGE:latest
+
+# Hub Added
+orbs:
+  aws-cli: circleci/aws-cli@1.3.1
 
 workflows:
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 0 * * *"
-          filters: *filter-only-master
+  hub-prod-build:
     jobs:
-      - scan-docker-image:
-          matrix:
-            parameters:
-              image: [grafana/grafana, grafana/grafana-enterprise]
-              tag: [latest, master, latest-ubuntu, master-ubuntu]
+      - build-and-push-hub-grafana-image:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^hub.*/
