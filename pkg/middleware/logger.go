@@ -24,11 +24,15 @@ import (
 	"github.com/grafana/grafana/pkg/setting"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+<<<<<<< HEAD
 	"github.com/uber/jaeger-client-go"
+=======
+	cw "github.com/weaveworks/common/middleware"
+>>>>>>> v7.4.1
 	"gopkg.in/macaron.v1"
 )
 
-func Logger() macaron.Handler {
+func Logger(cfg *setting.Cfg) macaron.Handler {
 	return func(res http.ResponseWriter, req *http.Request, c *macaron.Context) {
 		start := time.Now()
 		c.Data["perfmon.start"] = start
@@ -45,13 +49,17 @@ func Logger() macaron.Handler {
 
 		status := rw.Status()
 		if status == 200 || status == 304 {
-			if !setting.RouterLogging {
+			if !cfg.RouterLogging {
 				return
 			}
 		}
 
 		if ctx, ok := c.Data["ctx"]; ok {
 			ctxTyped := ctx.(*models.ReqContext)
+<<<<<<< HEAD
+=======
+
+>>>>>>> v7.4.1
 			logParams := []interface{}{
 				"method", req.Method,
 				"path", req.URL.Path,
@@ -62,7 +70,11 @@ func Logger() macaron.Handler {
 				"referer", req.Referer(),
 			}
 
+<<<<<<< HEAD
 			traceID, exist := extractTraceID(ctxTyped.Req.Request.Context())
+=======
+			traceID, exist := cw.ExtractTraceID(ctxTyped.Req.Request.Context())
+>>>>>>> v7.4.1
 			if exist {
 				logParams = append(logParams, "traceID", traceID)
 			}

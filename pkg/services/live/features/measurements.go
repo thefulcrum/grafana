@@ -21,6 +21,7 @@ func (m *MeasurementsRunner) GetHandlerForPath(path string) (models.ChannelHandl
 	return m, nil // for now all channels share config
 }
 
+<<<<<<< HEAD
 // GetChannelOptions gets channel options.
 // It gets called fast and often.
 func (m *MeasurementsRunner) GetChannelOptions(id string) centrifuge.ChannelOptions {
@@ -38,4 +39,17 @@ func (m *MeasurementsRunner) OnPublish(c *centrifuge.Client, e centrifuge.Publis
 	// currently generic... but should be stricter
 	// logger.Debug("Measurements runner got event on channel", "channel", e.Channel)
 	return e.Data, nil
+=======
+// OnSubscribe will let anyone connect to the path
+func (m *MeasurementsRunner) OnSubscribe(c *centrifuge.Client, e centrifuge.SubscribeEvent) (centrifuge.SubscribeReply, error) {
+	return centrifuge.SubscribeReply{}, nil
+}
+
+// OnPublish is called when a client wants to broadcast on the websocket
+// Currently this sends measurements over websocket -- should be replaced with the HTTP interface
+func (m *MeasurementsRunner) OnPublish(c *centrifuge.Client, e centrifuge.PublishEvent) (centrifuge.PublishReply, error) {
+	return centrifuge.PublishReply{
+		Options: centrifuge.PublishOptions{},
+	}, nil
+>>>>>>> v7.4.1
 }

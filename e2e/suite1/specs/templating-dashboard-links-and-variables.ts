@@ -28,7 +28,11 @@ e2e.scenario({
     const verifyLinks = (variableValue: string) => {
       e2e.components.DashboardLinks.link()
         .should('be.visible')
+<<<<<<< HEAD
         .and(links => {
+=======
+        .and((links) => {
+>>>>>>> v7.4.1
           expect(links).to.have.length.greaterThan(13);
 
           for (let index = 0; index < links.length; index++) {
@@ -46,20 +50,20 @@ e2e.scenario({
     // verify all links, should have All value
     verifyLinks('All');
 
-    e2e.pages.Dashboard.SubMenu.submenuItemValueDropDownValueLinkTexts('All')
-      .should('be.visible')
-      .click();
+    e2e.pages.Dashboard.SubMenu.submenuItemValueDropDownValueLinkTexts('All').should('be.visible').click();
 
-    e2e.pages.Dashboard.SubMenu.submenuItemValueDropDownOptionTexts('p2')
-      .should('be.visible')
-      .click();
+    e2e.pages.Dashboard.SubMenu.submenuItemValueDropDownOptionTexts('p2').should('be.visible').click();
 
     e2e.pages.Dashboard.Toolbar.navBar().click();
 
+<<<<<<< HEAD
     e2e.components.DashboardLinks.dropDown()
       .should('be.visible')
       .click()
       .wait('@tagsTemplatingSearch');
+=======
+    e2e.components.DashboardLinks.dropDown().should('be.visible').click().wait('@tagsTemplatingSearch');
+>>>>>>> v7.4.1
 
     // verify all links, should have p2 value
     verifyLinks('p2');

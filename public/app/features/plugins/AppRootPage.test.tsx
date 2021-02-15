@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { render, screen } from '@testing-library/react';
+=======
+import { act, render, screen } from '@testing-library/react';
+>>>>>>> v7.4.1
 import React, { Component } from 'react';
 import { StoreState } from 'app/types';
 import { Provider } from 'react-redux';
@@ -8,6 +12,12 @@ import { getPluginSettings } from './PluginSettingsCache';
 import { importAppPlugin } from './plugin_loader';
 import { getMockPlugin } from './__mocks__/pluginMocks';
 import { AppPlugin, PluginType, AppRootProps, NavModelItem } from '@grafana/data';
+<<<<<<< HEAD
+=======
+import { updateLocation } from 'app/core/actions';
+import { createRootReducer } from 'app/core/reducers/root';
+import { createStore } from 'redux';
+>>>>>>> v7.4.1
 
 jest.mock('./PluginSettingsCache', () => ({
   getPluginSettings: jest.fn(),
@@ -106,8 +116,69 @@ describe('AppRootPage', () => {
 
     // check that plugin and nav links were rendered, and plugin is mounted only once
     await screen.findByText('my great plugin');
+<<<<<<< HEAD
     await screen.findByRole('link', { name: /A page/ });
     await screen.findByRole('link', { name: /Another page/ });
     expect(timesMounted).toEqual(1);
   });
+=======
+    await screen.findAllByRole('link', { name: /A page/ });
+    await screen.findAllByRole('link', { name: /Another page/ });
+    expect(timesMounted).toEqual(1);
+  });
+
+  it('should not render component if not at plugin path', async () => {
+    getPluginSettingsMock.mockResolvedValue(
+      getMockPlugin({
+        type: PluginType.app,
+        enabled: true,
+      })
+    );
+
+    let timesRendered = 0;
+    class RootComponent extends Component<AppRootProps> {
+      render() {
+        timesRendered += 1;
+        return <p>my great component</p>;
+      }
+    }
+
+    const plugin = new AppPlugin();
+    plugin.root = RootComponent;
+
+    importAppPluginMock.mockResolvedValue(plugin);
+
+    const store = createStore(createRootReducer());
+    store.dispatch(updateLocation({ path: '/a/foo' }));
+    render(
+      <Provider store={store}>
+        <AppRootPage />
+      </Provider>
+    );
+    await screen.findByText('my great component');
+
+    // renders the first time
+    expect(timesRendered).toEqual(1);
+
+    await act(async () => {
+      await store.dispatch(
+        updateLocation({
+          path: '/foo',
+        })
+      );
+    });
+
+    expect(timesRendered).toEqual(1);
+
+    await act(async () => {
+      await store.dispatch(
+        updateLocation({
+          path: '/a/foo',
+        })
+      );
+    });
+
+    expect(timesRendered).toEqual(2);
+  });
+>>>>>>> v7.4.1
 });

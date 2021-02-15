@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
+=======
+>>>>>>> v7.4.1
 import {
   AbsoluteTimeRange,
   DataFrame,
@@ -11,17 +14,26 @@ import {
 } from '@grafana/data';
 import { config } from '@grafana/runtime';
 import { groupBy } from 'lodash';
+<<<<<<< HEAD
 
 import { ExplorePanelData } from '../../../types';
 import { getGraphSeriesModel } from '../../../plugins/panel/graph2/getGraphSeriesModel';
 import { dataFrameToLogsModel } from '../../../core/logs_model';
 import { refreshIntervalToSortOrder } from '../../../core/utils/explore';
+=======
+import { Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { dataFrameToLogsModel } from '../../../core/logs_model';
+import { refreshIntervalToSortOrder } from '../../../core/utils/explore';
+import { ExplorePanelData } from '../../../types';
+>>>>>>> v7.4.1
 
 /**
  * When processing response first we try to determine what kind of dataframes we got as one query can return multiple
  * dataFrames with different type of data. This is later used for type specific processing. As we use this in
  * Observable pipeline, it decorates the existing panelData to pass the results to later processing stages.
  */
+<<<<<<< HEAD
 export const decorateWithGraphLogsTraceAndTable = (data: PanelData): ExplorePanelData => {
   if (data.error) {
     return {
@@ -36,10 +48,17 @@ export const decorateWithGraphLogsTraceAndTable = (data: PanelData): ExplorePane
     };
   }
 
+=======
+export const decorateWithFrameTypeMetadata = (data: PanelData): ExplorePanelData => {
+>>>>>>> v7.4.1
   const graphFrames: DataFrame[] = [];
   const tableFrames: DataFrame[] = [];
   const logsFrames: DataFrame[] = [];
   const traceFrames: DataFrame[] = [];
+<<<<<<< HEAD
+=======
+  const nodeGraphFrames: DataFrame[] = [];
+>>>>>>> v7.4.1
 
   for (const frame of data.series) {
     switch (frame.meta?.preferredVisualisationType) {
@@ -55,6 +74,12 @@ export const decorateWithGraphLogsTraceAndTable = (data: PanelData): ExplorePane
       case 'table':
         tableFrames.push(frame);
         break;
+<<<<<<< HEAD
+=======
+      case 'nodeGraph':
+        nodeGraphFrames.push(frame);
+        break;
+>>>>>>> v7.4.1
       default:
         if (isTimeSeries(frame)) {
           graphFrames.push(frame);
@@ -65,6 +90,7 @@ export const decorateWithGraphLogsTraceAndTable = (data: PanelData): ExplorePane
         }
     }
   }
+<<<<<<< HEAD
 
   return {
     ...data,
@@ -107,6 +133,36 @@ export const decorateWithTableResult = (data: ExplorePanelData): Observable<Expl
     return of({ ...data, tableResult: null });
   }
 
+=======
+
+  return {
+    ...data,
+    graphFrames,
+    tableFrames,
+    logsFrames,
+    traceFrames,
+    nodeGraphFrames,
+    graphResult: null,
+    tableResult: null,
+    logsResult: null,
+  };
+};
+
+export const decorateWithGraphResult = (data: ExplorePanelData): ExplorePanelData => {
+  if (!data.graphFrames.length) {
+    return { ...data, graphResult: null };
+  }
+
+  return { ...data, graphResult: data.graphFrames };
+};
+
+/**
+ * This processing returns Observable because it uses Transformer internally which result type is also Observable.
+ * In this case the transformer should return single result but it is possible that in the future it could return
+ * multiple results and so this should be used with mergeMap or similar to unbox the internal observable.
+ */
+export const decorateWithTableResult = (data: ExplorePanelData): Observable<ExplorePanelData> => {
+>>>>>>> v7.4.1
   if (data.tableFrames.length === 0) {
     return of({ ...data, tableResult: null });
   }
@@ -124,7 +180,11 @@ export const decorateWithTableResult = (data: ExplorePanelData): Observable<Expl
     return 0;
   });
 
+<<<<<<< HEAD
   const hasOnlyTimeseries = data.tableFrames.every(df => isTimeSeries(df));
+=======
+  const hasOnlyTimeseries = data.tableFrames.every((df) => isTimeSeries(df));
+>>>>>>> v7.4.1
 
   // If we have only timeseries we do join on default time column which makes more sense. If we are showing
   // non timeseries or some mix of data we are not trying to join on anything and just try to merge them in
@@ -134,7 +194,11 @@ export const decorateWithTableResult = (data: ExplorePanelData): Observable<Expl
     : of(data.tableFrames).pipe(standardTransformers.mergeTransformer.operator({}));
 
   return transformer.pipe(
+<<<<<<< HEAD
     map(frames => {
+=======
+    map((frames) => {
+>>>>>>> v7.4.1
       const frame = frames[0];
 
       // set display processor
@@ -156,10 +220,13 @@ export const decorateWithTableResult = (data: ExplorePanelData): Observable<Expl
 export const decorateWithLogsResult = (
   options: { absoluteRange?: AbsoluteTimeRange; refreshInterval?: string } = {}
 ) => (data: ExplorePanelData): ExplorePanelData => {
+<<<<<<< HEAD
   if (data.error) {
     return { ...data, logsResult: null };
   }
 
+=======
+>>>>>>> v7.4.1
   if (data.logsFrames.length === 0) {
     return { ...data, logsResult: null };
   }
@@ -180,7 +247,11 @@ export const decorateWithLogsResult = (
  * Check if frame contains time series, which for our purpose means 1 time column and 1 or more numeric columns.
  */
 function isTimeSeries(frame: DataFrame): boolean {
+<<<<<<< HEAD
   const grouped = groupBy(frame.fields, field => field.type);
+=======
+  const grouped = groupBy(frame.fields, (field) => field.type);
+>>>>>>> v7.4.1
   return Boolean(
     Object.keys(grouped).length === 2 && grouped[FieldType.time]?.length === 1 && grouped[FieldType.number]
   );

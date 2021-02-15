@@ -10,4 +10,11 @@ export class MultiVariableBuilder<T extends VariableWithMultiSupport> extends Op
     this.variable.includeAll = includeAll;
     return this;
   }
+<<<<<<< HEAD
+=======
+  withAllValue(allValue: string) {
+    this.variable.allValue = allValue;
+    return this;
+  }
+>>>>>>> v7.4.1
 }

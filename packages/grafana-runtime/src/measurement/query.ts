@@ -57,7 +57,11 @@ export function getLiveMeasurementsObserver(
     .getChannel<LiveMeasurements>(addr)
     .getStream()
     .pipe(
+<<<<<<< HEAD
       map(evt => {
+=======
+      map((evt) => {
+>>>>>>> v7.4.1
         if (isLiveChannelMessageEvent(evt)) {
           rsp.data = evt.message.getData(query);
           if (!rsp.data.length) {

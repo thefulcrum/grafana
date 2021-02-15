@@ -49,7 +49,15 @@ export const PluginsErrorsInfoUnconnected: React.FC<PluginsErrorsInfoProps> = ({
       <div>
         <p>
           We have encountered{' '}
+<<<<<<< HEAD
           <a href="https://grafana.com/docs/grafana/latest/developers/plugins/backend/" target="_blank">
+=======
+          <a
+            href="https://grafana.com/docs/grafana/latest/developers/plugins/backend/"
+            target="_blank"
+            rel="noreferrer"
+          >
+>>>>>>> v7.4.1
             data source backend plugins
           </a>{' '}
           that are unsigned. Grafana Labs cannot guarantee the integrity of unsigned plugins and recommends using signed
@@ -61,7 +69,11 @@ export const PluginsErrorsInfoUnconnected: React.FC<PluginsErrorsInfoProps> = ({
           className={css`
             list-style-type: circle;
           `}
+<<<<<<< HEAD
           renderItem={e => (
+=======
+          renderItem={(e) => (
+>>>>>>> v7.4.1
             <div
               className={css`
                 margin-top: ${theme.spacing.sm};

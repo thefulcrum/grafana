@@ -44,7 +44,11 @@ var customMetricsDimensionsMap = make(map[string]map[string]map[string]*customMe
 var metricsMap = map[string][]string{
 	"AWS/ACMPrivateCA":            {"CRLGenerated", "Failure", "MisconfiguredCRLBucket", "Success", "Time"},
 	"AWS/AmazonMQ":                {"BurstBalance", "ConsumerCount", "CpuCreditBalance", "CpuUtilization", "CurrentConnectionsCount", "DequeueCount", "DispatchCount", "EnqueueCount", "EnqueueTime", "EstablishedConnectionsCount", "ExpiredCount", "HeapUsage", "InactiveDurableTopicSubscribersCount", "InFlightCount", "JobSchedulerStorePercentUsage", "JournalFilesForFastRecovery", "JournalFilesForFullRecovery", "MemoryUsage", "NetworkIn", "NetworkOut", "OpenTransactionCount", "ProducerCount", "QueueSize", "ReceiveCount", "StorePercentUsage", "TempPercentUsage", "TotalConsumerCount", "TotalDequeueCount", "TotalEnqueueCount", "TotalMessageCount", "TotalProducerCount", "VolumeReadOps", "VolumeWriteOps"},
+<<<<<<< HEAD
 	"AWS/ApiGateway":              {"4XXError", "5XXError", "CacheHitCount", "CacheMissCount", "Count", "IntegrationLatency", "Latency"},
+=======
+	"AWS/ApiGateway":              {"4xx", "4XXError", "5xx", "5XXError", "CacheHitCount", "CacheMissCount", "Count", "DataProcessed", "IntegrationLatency", "Latency"},
+>>>>>>> v7.4.1
 	"AWS/AppStream":               {"ActualCapacity", "AvailableCapacity", "CapacityUtilization", "DesiredCapacity", "InUseCapacity", "InsufficientCapacityError", "PendingCapacity", "RunningCapacity"},
 	"AWS/AppSync":                 {"4XXError", "5XXError", "Latency"},
 	"AWS/ApplicationELB":          {"ActiveConnectionCount", "ClientTLSNegotiationErrorCount", "ConsumedLCUs", "ELBAuthError", "ELBAuthFailure", "ELBAuthLatency", "ELBAuthRefreshTokenSuccess", "ELBAuthSuccess", "ELBAuthUserClaimsSizeExceeded", "HTTPCode_ELB_3XX_Count", "HTTPCode_ELB_4XX_Count", "HTTPCode_ELB_5XX_Count", "HTTPCode_Target_2XX_Count", "HTTPCode_Target_3XX_Count", "HTTPCode_Target_4XX_Count", "HTTPCode_Target_5XX_Count", "HTTP_Fixed_Response_Count", "HTTP_Redirect_Count", "HTTP_Redirect_Url_Limit_Exceeded_Count", "HealthyHostCount", "IPv6ProcessedBytes", "IPv6RequestCount", "LambdaInternalError", "LambdaTargetProcessedBytes", "LambdaUserError", "NewConnectionCount", "NonStickyRequestCount", "ProcessedBytes", "RejectedConnectionCount", "RequestCount", "RequestCountPerTarget", "RuleEvaluations", "StandardProcessedBytes", "TargetConnectionErrorCount", "TargetResponseTime", "TargetTLSNegotiationErrorCount", "UnHealthyHostCount"},
@@ -52,6 +56,10 @@ var metricsMap = map[string][]string{
 	"AWS/AutoScaling":             {"GroupDesiredCapacity", "GroupInServiceInstances", "GroupMaxSize", "GroupMinSize", "GroupPendingInstances", "GroupStandbyInstances", "GroupTerminatingInstances", "GroupTotalInstances"},
 	"AWS/Billing":                 {"EstimatedCharges"},
 	"AWS/Chatbot":                 {"EventsThrottled", "EventsProcessed", "MessageDeliverySuccess", "MessageDeliveryFailure", "UnsupportedEvents"},
+<<<<<<< HEAD
+=======
+	"AWS/ClientVPN":               {"ActiveConnectionsCount", "AuthenticationFailures", "CrlDaysToExpiry", "EgressBytes", "EgressPackets", "IngressBytes", "IngressPackets", "SelfServicePortalClientConfigurationDownloads"},
+>>>>>>> v7.4.1
 	"AWS/CloudFront":              {"4xxErrorRate", "5xxErrorRate", "BytesDownloaded", "BytesUploaded", "Requests", "TotalErrorRate", "CacheHitRate", "OriginLatency", "401ErrorRate", "403ErrorRate", "404ErrorRate", "502ErrorRate", "503ErrorRate", "504ErrorRate"},
 	"AWS/CloudHSM":                {"HsmKeysSessionOccupied", "HsmKeysTokenOccupied", "HsmSessionCount", "HsmSslCtxsOccupied", "HsmTemperature", "HsmUnhealthy", "HsmUsersAvailable", "HsmUsersMax", "InterfaceEth2OctetsInput", "InterfaceEth2OctetsOutput"},
 	"AWS/CloudSearch":             {"IndexUtilization", "Partitions", "SearchableDocuments", "SuccessfulRequests"},
@@ -62,7 +70,11 @@ var metricsMap = map[string][]string{
 	"AWS/DDoSProtection":          {"DDoSDetected", "DDoSAttackBitsPerSecond", "DDoSAttackPacketsPerSecond", "DDoSAttackRequestsPerSecond"},
 	"AWS/DMS":                     {"CDCChangesDiskSource", "CDCChangesDiskTarget", "CDCChangesMemorySource", "CDCChangesMemoryTarget", "CDCIncomingChanges", "CDCLatencySource", "CDCLatencyTarget", "CDCThroughputBandwidthSource", "CDCThroughputBandwidthTarget", "CDCThroughputRowsSource", "CDCThroughputRowsTarget", "CPUUtilization", "FreeStorageSpace", "FreeableMemory", "FullLoadThroughputBandwidthSource", "FullLoadThroughputBandwidthTarget", "FullLoadThroughputRowsSource", "FullLoadThroughputRowsTarget", "NetworkReceiveThroughput", "NetworkTransmitThroughput", "ReadIOPS", "ReadLatency", "ReadThroughput", "SwapUsage", "WriteIOPS", "WriteLatency", "WriteThroughput"},
 	"AWS/DocDB":                   {"BackupRetentionPeriodStorageUsed", "BufferCacheHitRatio", "ChangeStreamLogSize", "CPUUtilization", "DatabaseConnections", "DBInstanceReplicaLag", "DBClusterReplicaLagMaximum", "DBClusterReplicaLagMinimum", "DiskQueueDepth", "EngineUptime", "FreeableMemory", "FreeLocalStorage", "NetworkReceiveThroughput", "NetworkThroughput", "NetworkTransmitThroughput", "ReadIOPS", "ReadLatency", "ReadThroughput", "SnapshotStorageUsed", "SwapUsage", "TotalBackupStorageBilled", "VolumeBytesUsed", "VolumeReadIOPs", "VolumeWriteIOPs", "WriteIOPS", "WriteLatency", "WriteThroughput"},
+<<<<<<< HEAD
 	"AWS/DX":                      {"ConnectionBpsEgress", "ConnectionBpsIngress", "ConnectionCRCErrorCount", "ConnectionLightLevelRx", "ConnectionLightLevelTx", "ConnectionPpsEgress", "ConnectionPpsIngress", "ConnectionState", "VirtualInterfaceBpsEgress", "VirtualInterfaceBpsIngress", "VirtualInterfacePpsEgress", "VirtualInterfacePpsIngress"},
+=======
+	"AWS/DX":                      {"ConnectionBpsEgress", "ConnectionBpsIngress", "ConnectionErrorCount", "ConnectionCRCErrorCount", "ConnectionLightLevelRx", "ConnectionLightLevelTx", "ConnectionPpsEgress", "ConnectionPpsIngress", "ConnectionState", "VirtualInterfaceBpsEgress", "VirtualInterfaceBpsIngress", "VirtualInterfacePpsEgress", "VirtualInterfacePpsIngress"},
+>>>>>>> v7.4.1
 	"AWS/DAX":                     {"CPUUtilization", "NetworkPacketsIn", "NetworkPacketsOut", "GetItemRequestCount", "BatchGetItemRequestCount", "BatchWriteItemRequestCount", "DeleteItemRequestCount", "PutItemRequestCount", "UpdateItemRequestCount", "TransactWriteItemsCount", "TransactGetItemsCount", "ItemCacheHits", "ItemCacheMisses", "QueryCacheHits", "QueryCacheMisses", "ScanCacheHits", "ScanCacheMisses", "TotalRequestCount", "ErrorRequestCount", "FaultRequestCount", "FailedRequestCount", "QueryRequestCount", "ScanRequestCount", "ClientConnections", "EstimatedDbSize", "EvictedSize"},
 	"AWS/DynamoDB":                {"ConditionalCheckFailedRequests", "ConsumedReadCapacityUnits", "ConsumedWriteCapacityUnits", "OnlineIndexConsumedWriteCapacity", "OnlineIndexPercentageProgress", "OnlineIndexThrottleEvents", "PendingReplicationCount", "ProvisionedReadCapacityUnits", "ProvisionedWriteCapacityUnits", "ReadThrottleEvents", "ReplicationLatency", "ReturnedBytes", "ReturnedItemCount", "ReturnedRecordsCount", "SuccessfulRequestLatency", "SystemErrors", "ThrottledRequests", "TimeToLiveDeletedItemCount", "UserErrors", "WriteThrottleEvents"},
 	"AWS/EBS":                     {"BurstBalance", "VolumeConsumedReadWriteOps", "VolumeIdleTime", "VolumeQueueLength", "VolumeReadBytes", "VolumeReadOps", "VolumeThroughputPercentage", "VolumeTotalReadTime", "VolumeTotalWriteTime", "VolumeWriteBytes", "VolumeWriteOps"},
@@ -139,7 +151,11 @@ var metricsMap = map[string][]string{
 var dimensionsMap = map[string][]string{
 	"AWS/ACMPrivateCA":            {},
 	"AWS/AmazonMQ":                {"Broker", "NetworkConnector", "Queue", "Topic"},
+<<<<<<< HEAD
 	"AWS/ApiGateway":              {"ApiName", "Method", "Resource", "Stage"},
+=======
+	"AWS/ApiGateway":              {"ApiId", "ApiName", "Method", "Resource", "Stage"},
+>>>>>>> v7.4.1
 	"AWS/AppStream":               {"Fleet"},
 	"AWS/AppSync":                 {"GraphQLAPIId"},
 	"AWS/ApplicationELB":          {"AvailabilityZone", "LoadBalancer", "TargetGroup"},
@@ -147,6 +163,10 @@ var dimensionsMap = map[string][]string{
 	"AWS/AutoScaling":             {"AutoScalingGroupName"},
 	"AWS/Billing":                 {"Currency", "LinkedAccount", "ServiceName"},
 	"AWS/Chatbot":                 {"ConfigurationName"},
+<<<<<<< HEAD
+=======
+	"AWS/ClientVPN":               {"Endpoint"},
+>>>>>>> v7.4.1
 	"AWS/CloudFront":              {"DistributionId", "Region"},
 	"AWS/CloudHSM":                {"ClusterId", "HsmId", "Region"},
 	"AWS/CloudSearch":             {"ClientId", "DomainName"},
@@ -174,7 +194,11 @@ var dimensionsMap = map[string][]string{
 	"AWS/ElasticInference":        {"ElasticInferenceAcceleratorId", "InstanceId"},
 	"AWS/ElasticMapReduce":        {"ClusterId", "JobFlowId", "JobId"},
 	"AWS/ElasticTranscoder":       {"Operation", "PipelineId"},
+<<<<<<< HEAD
 	"AWS/Events":                  {"RuleName"},
+=======
+	"AWS/Events":                  {"EventBusName", "RuleName"},
+>>>>>>> v7.4.1
 	"AWS/FSx":                     {"FileSystemId"},
 	"AWS/Firehose":                {"DeliveryStreamName"},
 	"AWS/GameLift":                {"FleetId", "InstanceType", "MatchmakingConfigurationName", "MatchmakingConfigurationName-RuleName", "MetricGroups", "OperatingSystem", "QueueName"},

@@ -16,7 +16,12 @@ export class QueryEditor extends PureComponent<Props> {
     {
       label: 'Random Walk',
       value: GrafanaQueryType.RandomWalk,
-      description: 'Random signal within the selected time rage',
+      description: 'Random signal within the selected time range',
+    },
+    {
+      label: 'Live Measurements',
+      value: GrafanaQueryType.LiveMeasurements,
+      description: 'Stream real-time measurements from Grafana',
     },
     {
       label: 'Live Measurements',
@@ -52,7 +57,11 @@ export class QueryEditor extends PureComponent<Props> {
   renderMeasurementsQuery() {
     let { channel, measurements } = this.props.query;
     const channels: Array<SelectableValue<string>> = [];
+<<<<<<< HEAD
     let currentChannel = channels.find(c => c.value === channel);
+=======
+    let currentChannel = channels.find((c) => c.value === channel);
+>>>>>>> v7.4.1
     if (channel && !currentChannel) {
       currentChannel = {
         value: channel,
@@ -123,7 +132,11 @@ export class QueryEditor extends PureComponent<Props> {
             <InlineField label="Measurement" grow={true} labelWidth={labelWidth}>
               <Select
                 options={names}
+<<<<<<< HEAD
                 value={names.find(v => v.value === measurements?.name) || names[0]}
+=======
+                value={names.find((v) => v.value === measurements?.name) || names[0]}
+>>>>>>> v7.4.1
                 onChange={this.onMeasurementNameChanged}
                 allowCustomValue={true}
                 backspaceRemovesValue={true}
@@ -155,7 +168,11 @@ export class QueryEditor extends PureComponent<Props> {
           <InlineField label="Query type" grow={true} labelWidth={labelWidth}>
             <Select
               options={this.queryTypes}
+<<<<<<< HEAD
               value={this.queryTypes.find(v => v.value === query.queryType) || this.queryTypes[0]}
+=======
+              value={this.queryTypes.find((v) => v.value === query.queryType) || this.queryTypes[0]}
+>>>>>>> v7.4.1
               onChange={this.onQueryTypeChange}
             />
           </InlineField>

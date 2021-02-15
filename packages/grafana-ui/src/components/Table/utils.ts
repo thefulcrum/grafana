@@ -117,7 +117,11 @@ function getCellComponent(displayMode: TableCellDisplayMode, field: Field) {
 }
 
 export function filterByValue(field?: Field) {
+<<<<<<< HEAD
   return function(rows: Row[], id: string, filterValues?: SelectableValue[]) {
+=======
+  return function (rows: Row[], id: string, filterValues?: SelectableValue[]) {
+>>>>>>> v7.4.1
     if (rows.length === 0) {
       return rows;
     }
@@ -130,12 +134,20 @@ export function filterByValue(field?: Field) {
       return rows;
     }
 
+<<<<<<< HEAD
     return rows.filter(row => {
+=======
+    return rows.filter((row) => {
+>>>>>>> v7.4.1
       if (!row.values.hasOwnProperty(id)) {
         return false;
       }
       const value = rowToFieldValue(row, field);
+<<<<<<< HEAD
       return filterValues.find(filter => filter.value === value) !== undefined;
+=======
+      return filterValues.find((filter) => filter.value === value) !== undefined;
+>>>>>>> v7.4.1
     });
   };
 }
@@ -202,5 +214,5 @@ export function getFilteredOptions(options: SelectableValue[], filterValues?: Se
     return [];
   }
 
-  return options.filter(option => filterValues.some(filtered => filtered.value === option.value));
+  return options.filter((option) => filterValues.some((filtered) => filtered.value === option.value));
 }

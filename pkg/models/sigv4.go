@@ -24,6 +24,22 @@ const (
 	Credentials AuthType = "credentials"
 )
 
+// Host header is likely not necessary here
+// (see https://github.com/golang/go/blob/cad6d1fef5147d31e94ee83934c8609d3ad150b7/src/net/http/request.go#L92)
+// but adding for completeness
+var permittedHeaders = map[string]struct{}{
+	"Host":            {},
+	"Uber-Trace-Id":   {},
+	"User-Agent":      {},
+	"Accept":          {},
+	"Accept-Encoding": {},
+	"Content-Type":    {},
+	"Content-Length":  {},
+	"securitytenant":  {},
+	"sgtenant":        {},
+	"kbn-xsrf":        {},
+}
+
 type SigV4Middleware struct {
 	Config *Config
 	Next   http.RoundTripper
@@ -66,6 +82,7 @@ func (m *SigV4Middleware) signRequest(req *http.Request) (http.Header, error) {
 	body, err := replaceBody(req)
 	if err != nil {
 		return nil, err
+<<<<<<< HEAD
 	}
 
 	if strings.Contains(req.URL.RawPath, "%2C") {
@@ -84,6 +101,15 @@ func (m *SigV4Middleware) signRequest(req *http.Request) (http.Header, error) {
 
 		return header, err
 	}
+=======
+	}
+
+	if strings.Contains(req.URL.RawPath, "%2C") {
+		req.URL.RawPath = rest.EscapePath(req.URL.RawPath, false)
+	}
+
+	stripHeaders(req)
+>>>>>>> v7.4.1
 
 	return signer.Sign(req, bytes.NewReader(body), awsServiceNamespace(m.Config.DatasourceType), m.Config.Region, time.Now().UTC())
 }
@@ -97,10 +123,15 @@ func (m *SigV4Middleware) signer() (*v4.Signer, error) {
 		c = credentials.NewStaticCredentials(m.Config.AccessKey, m.Config.SecretKey, "")
 	case Credentials:
 		c = credentials.NewSharedCredentials("", m.Config.Profile)
+<<<<<<< HEAD
 	}
 
 	// passing nil credentials will force AWS to allow a more complete credential chain vs the explicit default
 	if c == nil {
+=======
+	case Default:
+		// passing nil credentials will force AWS to allow a more complete credential chain vs the explicit default
+>>>>>>> v7.4.1
 		s, err := session.NewSession(&aws.Config{
 			Region: aws.String(m.Config.Region),
 		})
@@ -113,6 +144,11 @@ func (m *SigV4Middleware) signer() (*v4.Signer, error) {
 		}
 
 		return v4.NewSigner(s.Config.Credentials), nil
+<<<<<<< HEAD
+=======
+	case "":
+		return nil, fmt.Errorf("invalid SigV4 auth type")
+>>>>>>> v7.4.1
 	}
 
 	if m.Config.AssumeRoleARN != "" {
@@ -132,6 +168,7 @@ func (m *SigV4Middleware) signer() (*v4.Signer, error) {
 func replaceBody(req *http.Request) ([]byte, error) {
 	if req.Body == nil {
 		return []byte{}, nil
+<<<<<<< HEAD
 	}
 	payload, err := ioutil.ReadAll(req.Body)
 	if err != nil {
@@ -149,5 +186,32 @@ func awsServiceNamespace(dsType string) string {
 		return "aps"
 	default:
 		panic(fmt.Sprintf("Unsupported datasource %s", dsType))
+=======
+	}
+	payload, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return nil, err
+	}
+	req.Body = ioutil.NopCloser(bytes.NewReader(payload))
+	return payload, nil
+}
+
+func awsServiceNamespace(dsType string) string {
+	switch dsType {
+	case DS_ES, DS_ES_OPEN_DISTRO:
+		return "es"
+	case DS_PROMETHEUS:
+		return "aps"
+	default:
+		panic(fmt.Sprintf("Unsupported datasource %s", dsType))
+	}
+}
+
+func stripHeaders(req *http.Request) {
+	for h := range req.Header {
+		if _, exists := permittedHeaders[h]; !exists {
+			req.Header.Del(h)
+		}
+>>>>>>> v7.4.1
 	}
 }

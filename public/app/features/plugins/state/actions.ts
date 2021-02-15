@@ -11,14 +11,22 @@ import {
 import { importPanelPlugin } from 'app/features/plugins/plugin_loader';
 
 export function loadPlugins(): ThunkResult<void> {
+<<<<<<< HEAD
   return async dispatch => {
+=======
+  return async (dispatch) => {
+>>>>>>> v7.4.1
     const plugins = await getBackendSrv().get('api/plugins', { embedded: 0 });
     dispatch(pluginsLoaded(plugins));
   };
 }
 
 export function loadPluginsErrors(): ThunkResult<void> {
+<<<<<<< HEAD
   return async dispatch => {
+=======
+  return async (dispatch) => {
+>>>>>>> v7.4.1
     const errors = await getBackendSrv().get('api/plugins/errors');
     dispatch(pluginsErrorsLoaded(errors));
   };

@@ -26,6 +26,15 @@ export interface TestDataQuery extends DataQuery {
   lines?: number;
   levelColumn?: boolean;
   channel?: string; // for grafana live
+<<<<<<< HEAD
+=======
+  nodes?: NodesQuery;
+}
+
+export interface NodesQuery {
+  type?: 'random' | 'response';
+  count?: number;
+>>>>>>> v7.4.1
 }
 
 export interface StreamingQuery {
