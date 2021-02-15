@@ -53,16 +53,26 @@ export class GrafanaBootConfig implements GrafanaConfig {
   pluginsToPreload: string[] = [];
   featureToggles: FeatureToggles = {
     live: false,
-    expressions: false,
     meta: false,
     ngalert: false,
-    traceToLogs: false,
+    panelLibrary: false,
   };
   licenseInfo: LicenseInfo = {} as LicenseInfo;
   rendererAvailable = false;
   http2Enabled = false;
   dateFormats?: SystemDateFormatSettings;
+<<<<<<< HEAD
   marketplaceUrl?: string;
+=======
+  sentry = {
+    enabled: false,
+    dsn: '',
+    customEndpoint: '',
+    sampleRate: 1,
+  };
+  marketplaceUrl?: string;
+  expressionsEnabled = false;
+>>>>>>> v7.4.1
 
   constructor(options: GrafanaBootConfig) {
     this.theme = options.bootData.user.lightTheme ? getTheme(GrafanaThemeType.Light) : getTheme(GrafanaThemeType.Dark);

@@ -27,12 +27,20 @@ type TestDataSupplier struct {
 
 // GetHandlerForPath gets the channel handler for a path.
 // Called on init.
+<<<<<<< HEAD
 func (g *TestDataSupplier) GetHandlerForPath(path string) (models.ChannelHandler, error) {
+=======
+func (s *TestDataSupplier) GetHandlerForPath(path string) (models.ChannelHandler, error) {
+>>>>>>> v7.4.1
 	channel := "grafana/testdata/" + path
 
 	if path == "random-2s-stream" {
 		return &testDataRunner{
+<<<<<<< HEAD
 			publisher:   g.Publisher,
+=======
+			publisher:   s.Publisher,
+>>>>>>> v7.4.1
 			running:     false,
 			speedMillis: 2000,
 			dropPercent: 0,
@@ -43,7 +51,11 @@ func (g *TestDataSupplier) GetHandlerForPath(path string) (models.ChannelHandler
 
 	if path == "random-flakey-stream" {
 		return &testDataRunner{
+<<<<<<< HEAD
 			publisher:   g.Publisher,
+=======
+			publisher:   s.Publisher,
+>>>>>>> v7.4.1
 			running:     false,
 			speedMillis: 400,
 			dropPercent: .6,
@@ -54,6 +66,7 @@ func (g *TestDataSupplier) GetHandlerForPath(path string) (models.ChannelHandler
 	return nil, fmt.Errorf("unknown channel")
 }
 
+<<<<<<< HEAD
 // GetChannelOptions gets channel options.
 // Called fast and often.
 func (g *testDataRunner) GetChannelOptions(id string) centrifuge.ChannelOptions {
@@ -64,15 +77,21 @@ func (g *testDataRunner) GetChannelOptions(id string) centrifuge.ChannelOptions 
 func (g *testDataRunner) OnSubscribe(c *centrifuge.Client, e centrifuge.SubscribeEvent) error {
 	if !g.running {
 		g.running = true
+=======
+// OnSubscribe will let anyone connect to the path
+func (r *testDataRunner) OnSubscribe(c *centrifuge.Client, e centrifuge.SubscribeEvent) (centrifuge.SubscribeReply, error) {
+	if !r.running {
+		r.running = true
+>>>>>>> v7.4.1
 
 		// Run in the background
-		go g.runRandomCSV()
+		go r.runRandomCSV()
 	}
 
-	// TODO? check authentication
-	return nil
+	return centrifuge.SubscribeReply{}, nil
 }
 
+<<<<<<< HEAD
 // OnPublish is called when an event is received from the websocket.
 func (g *testDataRunner) OnPublish(c *centrifuge.Client, e centrifuge.PublishEvent) ([]byte, error) {
 	return nil, fmt.Errorf("can not publish to testdata")
@@ -80,13 +99,26 @@ func (g *testDataRunner) OnPublish(c *centrifuge.Client, e centrifuge.PublishEve
 
 // runRandomCSV is just for an example.
 func (g *testDataRunner) runRandomCSV() {
+=======
+// OnPublish checks if a message from the websocket can be broadcast on this channel
+func (r *testDataRunner) OnPublish(c *centrifuge.Client, e centrifuge.PublishEvent) (centrifuge.PublishReply, error) {
+	return centrifuge.PublishReply{}, fmt.Errorf("can not publish to testdata")
+}
+
+// runRandomCSV is just for an example.
+func (r *testDataRunner) runRandomCSV() {
+>>>>>>> v7.4.1
 	spread := 50.0
 
 	walker := rand.Float64() * 100
-	ticker := time.NewTicker(time.Duration(g.speedMillis) * time.Millisecond)
+	ticker := time.NewTicker(time.Duration(r.speedMillis) * time.Millisecond)
 
 	measurement := models.Measurement{
+<<<<<<< HEAD
 		Name:   g.name,
+=======
+		Name:   r.name,
+>>>>>>> v7.4.1
 		Time:   0,
 		Values: make(map[string]interface{}, 5),
 	}
@@ -95,7 +127,7 @@ func (g *testDataRunner) runRandomCSV() {
 	}
 
 	for t := range ticker.C {
-		if rand.Float64() <= g.dropPercent {
+		if rand.Float64() <= r.dropPercent {
 			continue
 		}
 		delta := rand.Float64() - 0.5
@@ -112,9 +144,13 @@ func (g *testDataRunner) runRandomCSV() {
 			continue
 		}
 
-		err = g.publisher(g.channel, bytes)
+		err = r.publisher(r.channel, bytes)
 		if err != nil {
+<<<<<<< HEAD
 			logger.Warn("write", "channel", g.channel, "measurement", measurement)
+=======
+			logger.Warn("write", "channel", r.channel, "measurement", measurement)
+>>>>>>> v7.4.1
 		}
 	}
 }

@@ -15,7 +15,7 @@ import {
 } from '@grafana/data';
 
 import {
-  decorateWithGraphLogsTraceAndTable,
+  decorateWithFrameTypeMetadata,
   decorateWithGraphResult,
   decorateWithLogsResult,
   decorateWithTableResult,
@@ -78,6 +78,7 @@ const createExplorePanelData = (args: Partial<ExplorePanelData>): ExplorePanelDa
     tableFrames: [],
     tableResult: (undefined as unknown) as null,
     traceFrames: [],
+    nodeGraphFrames: [],
   };
 
   return { ...defaults, ...args };
@@ -93,7 +94,11 @@ describe('decorateWithGraphLogsTraceAndTable', () => {
       timeRange: ({} as unknown) as TimeRange,
     };
 
+<<<<<<< HEAD
     expect(decorateWithGraphLogsTraceAndTable(panelData)).toEqual({
+=======
+    expect(decorateWithFrameTypeMetadata(panelData)).toEqual({
+>>>>>>> v7.4.1
       series,
       state: LoadingState.Done,
       timeRange: {},
@@ -101,6 +106,10 @@ describe('decorateWithGraphLogsTraceAndTable', () => {
       tableFrames: [table, emptyTable],
       logsFrames: [logs],
       traceFrames: [],
+<<<<<<< HEAD
+=======
+      nodeGraphFrames: [],
+>>>>>>> v7.4.1
       graphResult: null,
       tableResult: null,
       logsResult: null,
@@ -115,7 +124,11 @@ describe('decorateWithGraphLogsTraceAndTable', () => {
       timeRange: ({} as unknown) as TimeRange,
     };
 
+<<<<<<< HEAD
     expect(decorateWithGraphLogsTraceAndTable(panelData)).toEqual({
+=======
+    expect(decorateWithFrameTypeMetadata(panelData)).toEqual({
+>>>>>>> v7.4.1
       series: [],
       state: LoadingState.Done,
       timeRange: {},
@@ -123,13 +136,21 @@ describe('decorateWithGraphLogsTraceAndTable', () => {
       tableFrames: [],
       logsFrames: [],
       traceFrames: [],
+<<<<<<< HEAD
+=======
+      nodeGraphFrames: [],
+>>>>>>> v7.4.1
       graphResult: null,
       tableResult: null,
       logsResult: null,
     });
   });
 
+<<<<<<< HEAD
   it('should handle query error', () => {
+=======
+  it('should return frames even if there is an error', () => {
+>>>>>>> v7.4.1
     const { timeSeries, logs, table } = getTestContext();
     const series: DataFrame[] = [timeSeries, logs, table];
     const panelData: PanelData = {
@@ -139,15 +160,27 @@ describe('decorateWithGraphLogsTraceAndTable', () => {
       timeRange: ({} as unknown) as TimeRange,
     };
 
+<<<<<<< HEAD
     expect(decorateWithGraphLogsTraceAndTable(panelData)).toEqual({
+=======
+    expect(decorateWithFrameTypeMetadata(panelData)).toEqual({
+>>>>>>> v7.4.1
       series: [timeSeries, logs, table],
       error: {},
       state: LoadingState.Error,
       timeRange: {},
+<<<<<<< HEAD
       graphFrames: [],
       tableFrames: [],
       logsFrames: [],
       traceFrames: [],
+=======
+      graphFrames: [timeSeries],
+      tableFrames: [table],
+      logsFrames: [logs],
+      traceFrames: [],
+      nodeGraphFrames: [],
+>>>>>>> v7.4.1
       graphResult: null,
       tableResult: null,
       logsResult: null,
@@ -159,6 +192,7 @@ describe('decorateWithGraphResult', () => {
   it('should process the graph dataFrames', () => {
     const { timeSeries } = getTestContext();
     const panelData = createExplorePanelData({ graphFrames: [timeSeries] });
+<<<<<<< HEAD
     console.log(decorateWithGraphResult(panelData).graphResult);
     expect(decorateWithGraphResult(panelData).graphResult).toMatchObject([
       {
@@ -201,6 +235,20 @@ describe('decorateWithGraphResult', () => {
     const { timeSeries } = getTestContext();
     const panelData = createExplorePanelData({ error: {}, graphFrames: [timeSeries] });
     expect(decorateWithGraphResult(panelData).graphResult).toBeNull();
+=======
+    expect(decorateWithGraphResult(panelData).graphResult).toMatchObject([timeSeries]);
+  });
+
+  it('returns null if it gets empty array', () => {
+    const panelData = createExplorePanelData({ graphFrames: [] });
+    expect(decorateWithGraphResult(panelData).graphResult).toBeNull();
+  });
+
+  it('returns data if panelData has error', () => {
+    const { timeSeries } = getTestContext();
+    const panelData = createExplorePanelData({ error: {}, graphFrames: [timeSeries] });
+    expect(decorateWithGraphResult(panelData).graphResult).toMatchObject([timeSeries]);
+>>>>>>> v7.4.1
   });
 });
 
@@ -298,11 +346,19 @@ describe('decorateWithTableResult', () => {
     expect(panelResult.tableResult).toBeNull();
   });
 
+<<<<<<< HEAD
   it('returns null if panelData has error', async () => {
     const { table, emptyTable } = getTestContext();
     const panelData = createExplorePanelData({ error: {}, tableFrames: [table, emptyTable] });
     const panelResult = await decorateWithTableResult(panelData).toPromise();
     expect(panelResult.tableResult).toBeNull();
+=======
+  it('returns data if panelData has error', async () => {
+    const { table, emptyTable } = getTestContext();
+    const panelData = createExplorePanelData({ error: {}, tableFrames: [table, emptyTable] });
+    const panelResult = await decorateWithTableResult(panelData).toPromise();
+    expect(panelResult.tableResult).not.toBeNull();
+>>>>>>> v7.4.1
   });
 });
 
@@ -412,9 +468,16 @@ describe('decorateWithLogsResult', () => {
     expect(decorateWithLogsResult()(panelData).logsResult).toBeNull();
   });
 
+<<<<<<< HEAD
   it('returns null if panelData has error', () => {
     const { logs } = getTestContext();
     const panelData = createExplorePanelData({ error: {}, logsFrames: [logs] });
     expect(decorateWithLogsResult()(panelData).logsResult).toBeNull();
+=======
+  it('returns data if panelData has error', () => {
+    const { logs } = getTestContext();
+    const panelData = createExplorePanelData({ error: {}, logsFrames: [logs] });
+    expect(decorateWithLogsResult()(panelData).logsResult).not.toBeNull();
+>>>>>>> v7.4.1
   });
 });

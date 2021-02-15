@@ -46,7 +46,11 @@ export const PluginListPage: React.FC<Props> = ({
         <>
           <OrgActionBar
             searchQuery={searchQuery}
+<<<<<<< HEAD
             setSearchQuery={query => setPluginsSearchQuery(query)}
+=======
+            setSearchQuery={(query) => setPluginsSearchQuery(query)}
+>>>>>>> v7.4.1
             linkButton={linkButton}
             target="_blank"
           />

@@ -30,19 +30,29 @@ func ParseChannelAddress(id string) ChannelAddress {
 	}
 	if length > 1 {
 		addr.Namespace = parts[1]
+<<<<<<< HEAD
 	}
 	if length > 2 {
 		addr.Path = parts[2]
 	}
+=======
+	}
+	if length > 2 {
+		addr.Path = parts[2]
+	}
+>>>>>>> v7.4.1
 	return addr
 }
 
 // IsValid checks if all parts of the address are valid.
 func (ca *ChannelAddress) IsValid() bool {
 	return ca.Scope != "" && ca.Namespace != "" && ca.Path != ""
+<<<<<<< HEAD
 }
 
 // ToChannelID converts this to a single string.
 func (ca *ChannelAddress) ToChannelID() string {
 	return ca.Scope + "/" + ca.Namespace + "/" + ca.Path
+=======
+>>>>>>> v7.4.1
 }

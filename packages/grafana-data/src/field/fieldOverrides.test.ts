@@ -7,7 +7,11 @@ import {
   setDynamicConfigValue,
   setFieldConfigDefaults,
 } from './fieldOverrides';
+<<<<<<< HEAD
 import { MutableDataFrame, toDataFrame, ArrayDataFrame } from '../dataframe';
+=======
+import { ArrayDataFrame, MutableDataFrame, toDataFrame } from '../dataframe';
+>>>>>>> v7.4.1
 import {
   DataFrame,
   Field,
@@ -77,11 +81,11 @@ locationUtil.initialize({
 
 describe('Global MinMax', () => {
   it('find global min max', () => {
-    const f0 = new MutableDataFrame();
-    f0.add({ title: 'AAA', value: 100, value2: 1234 }, true);
-    f0.add({ title: 'BBB', value: -20 }, true);
-    f0.add({ title: 'CCC', value: 200, value2: 1000 }, true);
-    expect(f0.length).toEqual(3);
+    const f0 = new ArrayDataFrame<{ title: string; value: number; value2: number | null }>([
+      { title: 'AAA', value: 100, value2: 1234 },
+      { title: 'BBB', value: -20, value2: null },
+      { title: 'CCC', value: 200, value2: 1000 },
+    ]);
 
     const minmax = findNumericFieldMinMax([f0]);
     expect(minmax.min).toEqual(-20);
@@ -138,11 +142,11 @@ describe('Global MinMax', () => {
 });
 
 describe('applyFieldOverrides', () => {
-  const f0 = new MutableDataFrame();
-  f0.add({ title: 'AAA', value: 100, value2: 1234 }, true);
-  f0.add({ title: 'BBB', value: -20 }, true);
-  f0.add({ title: 'CCC', value: 200, value2: 1000 }, true);
-  expect(f0.length).toEqual(3);
+  const f0 = new ArrayDataFrame<{ title: string; value: number; value2: number | null }>([
+    { title: 'AAA', value: 100, value2: 1234 },
+    { title: 'BBB', value: -20, value2: null },
+    { title: 'CCC', value: 200, value2: 1000 },
+  ]);
 
   // Hardcode the max value
   f0.fields[1].config.max = 0;
@@ -183,25 +187,28 @@ describe('applyFieldOverrides', () => {
           overrides: [],
         },
         replaceVariables: (value: any) => value,
+<<<<<<< HEAD
         getDataSourceSettingsByUid: undefined as any,
+=======
+>>>>>>> v7.4.1
         theme: getTestTheme(),
         fieldConfigRegistry: new FieldConfigOptionsRegistry(),
       });
 
       expect(withOverrides[0].fields[0].state!.scopedVars).toMatchInlineSnapshot(`
-        Object {
-          "__field": Object {
-            "text": "Field",
-            "value": Object {},
-          },
-          "__series": Object {
-            "text": "Series",
-            "value": Object {
-              "name": "A",
-            },
-          },
-        }
-      `);
+                                                                                 Object {
+                                                                                   "__field": Object {
+                                                                                     "text": "Field",
+                                                                                     "value": Object {},
+                                                                                   },
+                                                                                   "__series": Object {
+                                                                                     "text": "Series",
+                                                                                     "value": Object {
+                                                                                       "name": "A",
+                                                                                     },
+                                                                                   },
+                                                                                 }
+                                                                                 `);
 
       expect(withOverrides[1].fields[0].state!.scopedVars).toMatchInlineSnapshot(`
         Object {
@@ -245,8 +252,12 @@ describe('applyFieldOverrides', () => {
         overrides: [],
       },
       fieldConfigRegistry: customFieldRegistry,
+<<<<<<< HEAD
       getDataSourceSettingsByUid: undefined as any,
       replaceVariables: v => v,
+=======
+      replaceVariables: (v) => v,
+>>>>>>> v7.4.1
       theme: getTestTheme(),
     })[0];
 
@@ -263,7 +274,10 @@ describe('applyFieldOverrides', () => {
       data: [f0], // the frame
       fieldConfig: src as FieldConfigSource, // defaults + overrides
       replaceVariables: (undefined as any) as InterpolateFunction,
+<<<<<<< HEAD
       getDataSourceSettingsByUid: undefined as any,
+=======
+>>>>>>> v7.4.1
       theme: getTestTheme(),
       fieldConfigRegistry: customFieldRegistry,
     })[0];
@@ -291,18 +305,22 @@ describe('applyFieldOverrides', () => {
       data: [f0], // the frame
       fieldConfig: src as FieldConfigSource, // defaults + overrides
       replaceVariables: (undefined as any) as InterpolateFunction,
+<<<<<<< HEAD
       getDataSourceSettingsByUid: undefined as any,
       theme: getTestTheme(),
       autoMinMax: true,
+=======
+      theme: getTestTheme(),
+>>>>>>> v7.4.1
     })[0];
     const valueColumn = data.fields[1];
-    const config = valueColumn.config;
+    const range = valueColumn.state!.range!;
 
     // Keep max from the original setting
-    expect(config.max).toEqual(0);
+    expect(range.max).toEqual(0);
 
     // Don't Automatically pick the min value
-    expect(config.min).toEqual(-20);
+    expect(range.min).toEqual(-20);
   });
 
   it('getLinks should use applied field config', () => {
@@ -315,9 +333,13 @@ describe('applyFieldOverrides', () => {
         replaceVariablesCalls.push(variables);
         return value;
       }) as InterpolateFunction,
+<<<<<<< HEAD
       getDataSourceSettingsByUid: undefined as any,
       theme: getTestTheme(),
       autoMinMax: true,
+=======
+      theme: getTestTheme(),
+>>>>>>> v7.4.1
       fieldConfigRegistry: customFieldRegistry,
     })[0];
 
@@ -567,7 +589,6 @@ describe('getLinksSupplier', () => {
       {},
       replaceSpy,
       // this is used only for internal links so isn't needed here
-      () => ({} as any),
       {
         theme: getTestTheme(),
       }
@@ -600,6 +621,7 @@ describe('getLinksSupplier', () => {
                 title: '',
                 internal: {
                   datasourceUid: '0',
+                  datasourceName: 'testDS',
                   query: '12345',
                 },
               },
@@ -615,7 +637,10 @@ describe('getLinksSupplier', () => {
       {},
       // We do not need to interpolate anything for this test
       (value, vars, format) => value,
+<<<<<<< HEAD
       uid => ({ name: 'testDS' } as any),
+=======
+>>>>>>> v7.4.1
       { theme: getTestTheme() }
     );
     const links = supplier({ valueRowIndex: 0 });

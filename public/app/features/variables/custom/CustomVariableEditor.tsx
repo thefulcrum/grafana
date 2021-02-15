@@ -4,9 +4,15 @@ import { SelectionOptionsEditor } from '../editor/SelectionOptionsEditor';
 import { OnPropChangeArguments, VariableEditorProps } from '../editor/types';
 import { connectWithStore } from 'app/core/utils/connectWithReduxStore';
 import { MapDispatchToProps, MapStateToProps } from 'react-redux';
+<<<<<<< HEAD
 import { Field, TextArea } from '@grafana/ui';
+=======
+import { VerticalGroup } from '@grafana/ui';
+>>>>>>> v7.4.1
 import { StoreState } from 'app/types';
 import { changeVariableMultiValue } from '../state/actions';
+import { VariableSectionHeader } from '../editor/VariableSectionHeader';
+import { VariableTextAreaField } from '../editor/VariableTextAreaField';
 
 interface OwnProps extends VariableEditorProps<CustomVariableModel> {}
 
@@ -40,6 +46,7 @@ class CustomVariableEditorUnconnected extends PureComponent<Props> {
 
   render() {
     return (
+<<<<<<< HEAD
       <>
         <div className="gf-form-group">
           <h5 className="section-heading">Custom Options</h5>
@@ -65,6 +72,30 @@ class CustomVariableEditorUnconnected extends PureComponent<Props> {
           onMultiChanged={this.props.changeVariableMultiValue}
         />
       </>
+=======
+      <VerticalGroup spacing="xs">
+        <VariableSectionHeader name="Custom Options" />
+        <VerticalGroup spacing="md">
+          <VerticalGroup spacing="none">
+            <VariableTextAreaField
+              name="Values separated by comma"
+              value={this.props.variable.query}
+              placeholder="1, 10, mykey : myvalue, myvalue, escaped\,value"
+              onChange={this.onChange}
+              onBlur={this.onBlur}
+              required
+              width={50}
+              labelWidth={27}
+            />
+          </VerticalGroup>
+          <SelectionOptionsEditor
+            variable={this.props.variable}
+            onPropChange={this.onSelectionOptionsChange}
+            onMultiChanged={this.props.changeVariableMultiValue}
+          />{' '}
+        </VerticalGroup>
+      </VerticalGroup>
+>>>>>>> v7.4.1
     );
   }
 }

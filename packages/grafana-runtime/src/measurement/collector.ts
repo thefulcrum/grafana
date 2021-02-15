@@ -37,7 +37,11 @@ export class MeasurementCache {
     if (!match) {
       return frames;
     }
+<<<<<<< HEAD
     return frames.filter(f => {
+=======
+    return frames.filter((f) => {
+>>>>>>> v7.4.1
       return matchAllLabels(match, f.meta?.custom?.labels);
     });
   }
@@ -45,6 +49,10 @@ export class MeasurementCache {
   addMeasurement(m: Measurement, action: MeasurementAction): DataFrame {
     const key = m.labels ? formatLabels(m.labels) : '';
     let frame = this.frames[key];
+<<<<<<< HEAD
+=======
+
+>>>>>>> v7.4.1
     if (!frame) {
       frame = new CircularDataFrame(this.config);
       frame.name = this.name;
@@ -52,14 +60,26 @@ export class MeasurementCache {
         name: 'time',
         type: FieldType.time,
       });
+<<<<<<< HEAD
       for (const [key, value] of Object.entries(m.values)) {
         frame.addFieldFor(value, key).labels = m.labels;
       }
+=======
+
+      for (const [key, value] of Object.entries(m.values)) {
+        frame.addFieldFor(value, key).labels = m.labels;
+      }
+
+>>>>>>> v7.4.1
       frame.meta = {
         custom: {
           labels: m.labels,
         },
       };
+<<<<<<< HEAD
+=======
+
+>>>>>>> v7.4.1
       this.frames[key] = frame;
     }
 
@@ -71,12 +91,20 @@ export class MeasurementCache {
     }
 
     // Add the timestamp
+<<<<<<< HEAD
     frame.values['time'].add(m.time || Date.now());
+=======
+    frame.fields[0].values.add(m.time || Date.now());
+>>>>>>> v7.4.1
 
     // Attach field config to the current fields
     if (m.config) {
       for (const [key, value] of Object.entries(m.config)) {
+<<<<<<< HEAD
         const f = frame.fields.find(f => f.name === key);
+=======
+        const f = frame.fields.find((f) => f.name === key);
+>>>>>>> v7.4.1
         if (f) {
           f.config = value;
         }
@@ -85,6 +113,7 @@ export class MeasurementCache {
 
     // Append all values (a row)
     for (const [key, value] of Object.entries(m.values)) {
+<<<<<<< HEAD
       let v = frame.values[key];
       if (!v) {
         const f = frame.addFieldFor(value, key);
@@ -92,6 +121,16 @@ export class MeasurementCache {
         v = f.values;
       }
       v.add(value);
+=======
+      const existingField = frame.fields.find((v) => v.name === key);
+      if (!existingField) {
+        const f = frame.addFieldFor(value, key);
+        f.labels = m.labels;
+        f.values.add(value);
+      } else {
+        existingField.values.add(value);
+      }
+>>>>>>> v7.4.1
     }
 
     // Make sure all fields have the same length
@@ -133,7 +172,11 @@ export class MeasurementCollector implements LiveMeasurements {
     if (fields && fields.length) {
       let filtered: DataFrame[] = [];
       for (const frame of data) {
+<<<<<<< HEAD
         const match = frame.fields.filter(f => fields.includes(f.name));
+=======
+        const match = frame.fields.filter((f) => fields.includes(f.name));
+>>>>>>> v7.4.1
         if (match.length > 0) {
           filtered.push({ ...frame, fields: match }); // Copy the frame with fewer fields
         }
@@ -149,7 +192,11 @@ export class MeasurementCollector implements LiveMeasurements {
   getDistinctLabels(name: string): Labels[] {
     const m = this.measurements.get(name);
     if (m) {
+<<<<<<< HEAD
       return Object.keys(m.frames).map(k => parseLabels(k));
+=======
+      return Object.keys(m.frames).map((k) => parseLabels(k));
+>>>>>>> v7.4.1
     }
     return [];
   }

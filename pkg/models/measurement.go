@@ -26,6 +26,7 @@ type Measurement struct {
 // MeasurementAction defines what should happen when you send a list of measurements.
 type MeasurementAction string
 
+<<<<<<< HEAD
 const (
 	// MeasurementActionAppend means new values should be added to a client buffer.  This is the default action
 	MeasurementActionAppend MeasurementAction = "append"
@@ -37,6 +38,8 @@ const (
 	MeasurementActionClear MeasurementAction = "clear"
 )
 
+=======
+>>>>>>> v7.4.1
 // MeasurementBatch is a collection of measurements all sent at once.
 type MeasurementBatch struct {
 	// Action is the action in question, the default is append.

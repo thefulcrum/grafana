@@ -14,7 +14,11 @@ interface Props {
   dashboardId: any;
 }
 
+<<<<<<< HEAD
 export const DashboardLinksDashboard: React.FC<Props> = props => {
+=======
+export const DashboardLinksDashboard: React.FC<Props> = (props) => {
+>>>>>>> v7.4.1
   const { link, linkInfo } = props;
   const listRef = useRef<HTMLUListElement>(null);
   const [opened, setOpened] = useState(0);
@@ -87,7 +91,11 @@ interface LinkElementProps {
   children: JSX.Element;
 }
 
+<<<<<<< HEAD
 const LinkElement: React.FC<LinkElementProps> = props => {
+=======
+const LinkElement: React.FC<LinkElementProps> = (props) => {
+>>>>>>> v7.4.1
   const { link, children, ...rest } = props;
 
   return (
@@ -134,8 +142,8 @@ export function resolveLinks(
   }
 ): ResolvedLinkDTO[] {
   return searchHits
-    .filter(searchHit => searchHit.id !== dashboardId)
-    .map(searchHit => {
+    .filter((searchHit) => searchHit.id !== dashboardId)
+    .map((searchHit) => {
       const id = searchHit.id;
       const title = dependencies.sanitize(searchHit.title);
       const resolvedLink = dependencies.getLinkSrv().getLinkUrl({ ...link, url: searchHit.url });

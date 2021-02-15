@@ -4,5 +4,9 @@
   "packages": [
     "packages/*"
   ],
+<<<<<<< HEAD
   "version": "7.3.4"
+=======
+  "version": "7.4.1"
+>>>>>>> v7.4.1
 }

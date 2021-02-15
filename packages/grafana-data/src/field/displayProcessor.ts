@@ -4,7 +4,11 @@ import _ from 'lodash';
 // Types
 import { Field, FieldType } from '../types/dataFrame';
 import { GrafanaTheme } from '../types/theme';
+<<<<<<< HEAD
 import { DecimalCount, DecimalInfo, DisplayProcessor, DisplayValue } from '../types/displayValue';
+=======
+import { DisplayProcessor, DisplayValue } from '../types/displayValue';
+>>>>>>> v7.4.1
 import { getValueFormat } from '../valueFormats/valueFormats';
 import { getMappedValue } from '../utils/valueMappings';
 import { dateTime } from '../datetime';
@@ -27,9 +31,10 @@ interface DisplayProcessorOptions {
 // Reasonable units for time
 const timeFormats: KeyValue<boolean> = {
   dateTimeAsIso: true,
-  dateTimeAsIsoSmart: true,
+  dateTimeAsIsoNoDateIfToday: true,
   dateTimeAsUS: true,
-  dateTimeAsUSSmart: true,
+  dateTimeAsUSNoDateIfToday: true,
+  dateTimeAsLocal: true,
   dateTimeFromNow: true,
 };
 
@@ -86,8 +91,7 @@ export function getDisplayProcessor(options?: DisplayProcessorOptions): DisplayP
 
     if (!isNaN(numeric)) {
       if (shouldFormat && !_.isBoolean(value)) {
-        const { decimals, scaledDecimals } = getDecimalsForValue(value, config.decimals);
-        const v = formatFunc(numeric, decimals, scaledDecimals, options.timeZone);
+        const v = formatFunc(numeric, config.decimals, null, options.timeZone);
         text = v.text;
         suffix = v.suffix;
         prefix = v.prefix;
@@ -137,6 +141,7 @@ function toStringProcessor(value: any): DisplayValue {
   return { text: _.toString(value), numeric: toNumber(value) };
 }
 
+<<<<<<< HEAD
 export function getDecimalsForValue(value: number, decimalOverride?: DecimalCount): DecimalInfo {
   if (_.isNumber(decimalOverride)) {
     // It's important that scaledDecimals is null here
@@ -176,6 +181,8 @@ export function getDecimalsForValue(value: number, decimalOverride?: DecimalCoun
   return { decimals, scaledDecimals };
 }
 
+=======
+>>>>>>> v7.4.1
 export function getRawDisplayProcessor(): DisplayProcessor {
   return (value: any) => ({
     text: `${value}`,

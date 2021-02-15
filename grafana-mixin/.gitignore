@@ -1,3 +1,8 @@
+<<<<<<< HEAD
 alerts.yaml
 rules.yaml
+=======
+/alerts.yaml
+/rules.yaml
+>>>>>>> v7.4.1
 dashboards_out
