@@ -2,12 +2,14 @@ import React, { PureComponent } from 'react';
 import appEvents from '../../app_events';
 import TopSection from './TopSection';
 import BottomSection from './BottomSection';
-import config from 'app/core/config';
+// import config from 'app/core/config';
 import { CoreEvents } from 'app/types';
 import { Branding } from 'app/core/components/Branding/Branding';
 import { Icon } from '@grafana/ui';
 
-const homeUrl = config.appSubUrl || '/';
+// const homeUrl = config.appSubUrl || '/';
+// We want to go back to CDP console
+const homeUrl = '/';
 
 export class SideMenu extends PureComponent {
   toggleSideMenuSmallBreakpoint = () => {
