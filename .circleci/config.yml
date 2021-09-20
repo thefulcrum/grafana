@@ -5,7 +5,7 @@ jobs:
   build-and-push-hub-grafana-image:
     description: Build hub's grafana image
     docker:
-      - image: cimg/node:16
+      - image: cimg/node:16.0.0
     resource_class: large
     environment:
       ECR_REPOSITORY_BASE: 922490317956.dkr.ecr.ap-southeast-2.amazonaws.com
