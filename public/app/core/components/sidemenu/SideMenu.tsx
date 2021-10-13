@@ -2,13 +2,15 @@ import React, { FC, useCallback } from 'react';
 import appEvents from '../../app_events';
 import TopSection from './TopSection';
 import BottomSection from './BottomSection';
-import config from 'app/core/config';
-import { CoreEvents, KioskMode } from 'app/types';
+// import config from 'app/core/config';
+import { CoreEvents } from 'app/types';
 import { Branding } from 'app/core/components/Branding/Branding';
 import { Icon } from '@grafana/ui';
 import { useLocation } from 'react-router-dom';
 
-const homeUrl = config.appSubUrl || '/';
+// const homeUrl = config.appSubUrl || '/';
+// We want to go back to CDP console
+const homeUrl = '/';
 
 export const SideMenu: FC = React.memo(() => {
   const location = useLocation();
