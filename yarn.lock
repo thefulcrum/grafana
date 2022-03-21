@@ -1930,10 +1930,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@braintree/sanitize-url@*", "@braintree/sanitize-url@5.0.2":
-  version "5.0.2"
-  resolved "https://registry.yarnpkg.com/@braintree/sanitize-url/-/sanitize-url-5.0.2.tgz#b23080fa35520e993a8a37a0f5bca26aa4650a48"
-  integrity sha512-NBEJlHWrhQucLhZGHtSxM2loSaNUMajC7KOYJLyfcdW/6goVoff2HoYI3bz8YCDN0wKGbxtUL0gx2dvHpvnWlw==
+"@braintree/sanitize-url@*", "@braintree/sanitize-url@6.0.0":
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/@braintree/sanitize-url/-/sanitize-url-6.0.0.tgz#fe364f025ba74f6de6c837a84ef44bdb1d61e68f"
+  integrity sha512-mgmE7XBYY/21erpzhexk4Cj1cyTQ9LzvnTxtzM17BJ7ERMNE6W72mQRo0I1Ud8eFJ+RVVIcBNhLFZ3GX4XFz5w==
 
 "@cnakazawa/watch@^1.0.3":
   version "1.0.3"
@@ -4045,7 +4045,7 @@
     storybook-addon-outline "^1.4.1"
     ts-dedent "^2.0.0"
 
-"@storybook/addon-knobs@6.3.5":
+"@storybook/addon-knobs@6.3.0":
   version "6.3.0"
   resolved "https://registry.yarnpkg.com/@storybook/addon-knobs/-/addon-knobs-6.3.0.tgz#f289c072729651150a27a163371df20922c24f93"
   integrity sha512-wsZZ1t38KHdaxzrc9oPyiIJDihJnjHRRabrENQbylktJwETEjb2z3eX0iBRJGiz/YCHO+tGd0ItyZArOdijT6g==
