@@ -4045,7 +4045,7 @@
     storybook-addon-outline "^1.4.1"
     ts-dedent "^2.0.0"
 
-"@storybook/addon-knobs@6.3.5":
+"@storybook/addon-knobs@6.3.0":
   version "6.3.0"
   resolved "https://registry.yarnpkg.com/@storybook/addon-knobs/-/addon-knobs-6.3.0.tgz#f289c072729651150a27a163371df20922c24f93"
   integrity sha512-wsZZ1t38KHdaxzrc9oPyiIJDihJnjHRRabrENQbylktJwETEjb2z3eX0iBRJGiz/YCHO+tGd0ItyZArOdijT6g==
@@ -10076,9 +10076,9 @@ decimal.js@^10.2.0:
   integrity sha512-vDPw+rDgn3bZe1+F/pyEwb1oMG2XTlRVgAa6B4KccTEpYgF8w6eQllVbQcfIJnZyvzFtFpxnpGtx8dd7DJp/Rw==
 
 decode-uri-component@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/decode-uri-component/-/decode-uri-component-0.2.0.tgz#eb3913333458775cb84cd1a1fae062106bb87545"
-  integrity sha1-6zkTMzRYd1y4TNGh+uBiEGu4dUU=
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/decode-uri-component/-/decode-uri-component-0.2.2.tgz#e69dbe25d37941171dd540e024c444cd5188e1e9"
+  integrity sha512-FqUYQ+8o158GyGTrMFJms9qh3CqTKvAqgqsTnkLI8sKu0028orqBhxNMFkFen0zGyg6epACD32pjVk58ngIErQ==
 
 dedent@^0.7.0:
   version "0.7.0"
