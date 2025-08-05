@@ -1,11 +1,55 @@
 version: 2.1
-jobs:
-  build:
-    docker:
-      - image: alpine:3.7
-    steps:
-      - run:
-          name: The First Step
-          command: |
-            echo 'Fake step!'
 
+jobs:
+  # Hub added jobs
+  build-and-push-hub-grafana-image:
+    description: Build hub's grafana image
+    docker:
+      - image: cimg/node:16.0.0
+    resource_class: large
+    environment:
+      ECR_REPOSITORY_BASE: 922490317956.dkr.ecr.ap-southeast-2.amazonaws.com
+      AWS_DEFAULT_REGION: ap-southeast-2
+      IMAGE: reporting-fulcrum
+      VERSION: << pipeline.git.tag >>
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 19.03.13
+          docker_layer_caching: true
+      - aws-cli/setup
+      - run:
+          name: Login to Hub's ECR
+          command: |
+            aws ecr get-login-password | docker login --username AWS --password-stdin 922490317956.dkr.ecr.ap-southeast-2.amazonaws.com
+      - run:
+          name: Build Hub Grafana docker's image
+          no_output_timeout: 30m
+          command: |
+            echo "Building Hub Grafana $VERSION"
+
+            docker build -f Dockerfile -t $VERSION -t latest .
+      - run:
+          name: Docker Tag Hub Grafana Image
+          command: |
+            docker tag $VERSION $ECR_REPOSITORY_BASE/$IMAGE:$VERSION
+            docker tag latest $ECR_REPOSITORY_BASE/$IMAGE:latest
+      - run:
+          name: Docker Push Hub Grafana Image to ECR
+          command: |
+            docker push $ECR_REPOSITORY_BASE/$IMAGE:$VERSION
+            docker push $ECR_REPOSITORY_BASE/$IMAGE:latest
+
+# Hub Added
+orbs:
+  aws-cli: circleci/aws-cli@1.3.1
+
+workflows:
+  hub-prod-build:
+    jobs:
+      - build-and-push-hub-grafana-image:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^hub.*/
