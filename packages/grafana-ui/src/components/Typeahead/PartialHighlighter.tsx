@@ -1,5 +1,6 @@
-import React, { createElement } from 'react';
-import { HighlightPart } from '../../types';
+import { createElement } from 'react';
+
+import { HighlightPart } from '../../types/completion';
 
 interface Props {
   text: string;
@@ -26,10 +27,10 @@ function getStartIndices(parts: HighlightPart[], length: number): number[] {
   return indices;
 }
 
-export const PartialHighlighter: React.FC<Props> = (props: Props) => {
+export const PartialHighlighter = (props: Props) => {
   let { highlightParts, text, highlightClassName } = props;
 
-  if (!highlightParts) {
+  if (!highlightParts?.length) {
     return null;
   }
 
@@ -42,11 +43,14 @@ export const PartialHighlighter: React.FC<Props> = (props: Props) => {
     let end = indices[i];
 
     children.push(
-      createElement(highlighted ? 'mark' : 'span', {
-        key: i - 1,
-        children: text.substring(start, end),
-        className: highlighted ? highlightClassName : undefined,
-      })
+      createElement(
+        highlighted ? 'mark' : 'span',
+        {
+          key: i - 1,
+          className: highlighted ? highlightClassName : undefined,
+        },
+        text.substring(start, end)
+      )
     );
     highlighted = !highlighted;
   }

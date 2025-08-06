@@ -2,6 +2,7 @@ import { FieldConfigOptionsRegistry } from '../field/FieldConfigOptionsRegistry'
 import { standardFieldConfigEditorRegistry } from '../field/standardFieldConfigEditorRegistry';
 import { FieldConfigProperty, FieldConfigPropertyItem } from '../types/fieldOverrides';
 import { FieldConfigEditorBuilder } from '../utils/OptionsUIBuilders';
+
 import { SetFieldConfigOptionsArgs } from './PanelPlugin';
 
 /**
@@ -42,15 +43,25 @@ export function createFieldConfigRegistry<TFieldConfigOptions>(
   }
 
   for (let fieldConfigProp of standardConfigs) {
+    const id = fieldConfigProp.id as FieldConfigProperty;
     if (config.disableStandardOptions) {
-      const isDisabled = config.disableStandardOptions.indexOf(fieldConfigProp.id as FieldConfigProperty) > -1;
+      const isDisabled = config.disableStandardOptions.indexOf(id) > -1;
       if (isDisabled) {
         continue;
       }
     }
     if (config.standardOptions) {
-      const customDefault: any = config.standardOptions[fieldConfigProp.id as FieldConfigProperty]?.defaultValue;
-      const customSettings: any = config.standardOptions[fieldConfigProp.id as FieldConfigProperty]?.settings;
+      const customHideFromDefaults = config.standardOptions[id]?.hideFromDefaults;
+      const customDefault = config.standardOptions[id]?.defaultValue;
+      const customSettings = config.standardOptions[id]?.settings;
+
+      if (customHideFromDefaults !== undefined) {
+        fieldConfigProp = {
+          ...fieldConfigProp,
+          hideFromDefaults: customHideFromDefaults,
+        };
+      }
+
       if (customDefault) {
         fieldConfigProp = {
           ...fieldConfigProp,
@@ -72,6 +83,13 @@ export function createFieldConfigRegistry<TFieldConfigOptions>(
       for (let extensionProperty of standardOptionsExtensions[fieldConfigProp.category[0]]) {
         registry.register(extensionProperty);
       }
+    }
+  }
+
+  // assert that field configs do not use array path syntax
+  for (const item of registry.list()) {
+    if (item.path.indexOf('[') > 0) {
+      throw new Error(`[${pluginName}] Field config paths do not support arrays: ${item.id}`);
     }
   }
 

@@ -1,8 +1,16 @@
+<<<<<<< HEAD
 import React from 'react';
 import { Segment, SegmentInput, useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { css } from '@emotion/css';
 
+=======
+import { css } from '@emotion/css';
+
+import { GrafanaTheme2, SelectableValue } from '@grafana/data';
+import { Segment, SegmentInput, useStyles2 } from '@grafana/ui';
+
+>>>>>>> v12.1.0
 export type EditableParam = {
   name: string;
   value: string;
@@ -66,6 +74,7 @@ const getStyles = (theme: GrafanaTheme2) => ({
     margin: 0,
     padding: 0,
   }),
+<<<<<<< HEAD
   input: css`
     margin: 0;
     padding: 0;
@@ -73,4 +82,13 @@ const getStyles = (theme: GrafanaTheme2) => ({
       height: 25px;
     },
   `,
+=======
+  input: css({
+    margin: 0,
+    padding: 0,
+    input: {
+      height: '25px',
+    },
+  }),
+>>>>>>> v12.1.0
 });

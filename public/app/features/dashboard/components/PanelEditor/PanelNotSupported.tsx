@@ -1,34 +1,32 @@
-import React, { FC, useCallback } from 'react';
-import { useDispatch } from 'react-redux';
-import { Dispatch } from 'redux';
-import { Button, VerticalGroup } from '@grafana/ui';
+import { useCallback } from 'react';
 
-import { Layout } from '@grafana/ui/src/components/Layout/Layout';
-import { PanelEditorTabId } from './types';
+import { Trans } from '@grafana/i18n';
 import { locationService } from '@grafana/runtime';
+import { Button, Stack } from '@grafana/ui';
+
+import { PanelEditorTabId } from './types';
 
 export interface Props {
   message: string;
-  dispatch?: Dispatch;
 }
 
-export const PanelNotSupported: FC<Props> = ({ message, dispatch: propsDispatch }) => {
-  let dispatch = useDispatch();
-  dispatch = propsDispatch ?? dispatch;
+export function PanelNotSupported({ message }: Props): JSX.Element {
   const onBackToQueries = useCallback(() => {
     locationService.partial({ tab: PanelEditorTabId.Query });
   }, []);
 
   return (
-    <Layout justify="center" style={{ marginTop: '100px' }}>
-      <VerticalGroup spacing="md">
-        <h2>{message}</h2>
-        <div>
-          <Button size="md" variant="secondary" icon="arrow-left" onClick={onBackToQueries}>
-            Go back to Queries
-          </Button>
-        </div>
-      </VerticalGroup>
-    </Layout>
+    <div style={{ marginTop: '100px' }}>
+      <Stack direction="row" justifyContent="center">
+        <Stack direction="column" gap={2}>
+          <h2>{message}</h2>
+          <div>
+            <Button size="md" variant="secondary" icon="arrow-left" onClick={onBackToQueries}>
+              <Trans i18nKey="dashboard.panel-not-supported.go-back-to-queries">Go back to Queries</Trans>
+            </Button>
+          </div>
+        </Stack>
+      </Stack>
+    </div>
   );
-};
+}

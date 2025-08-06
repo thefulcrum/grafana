@@ -1,15 +1,18 @@
 import { Registry } from '@grafana/data';
+
+import { getFieldNameByRegexMatcherItem } from './FieldNameByRegexMatcherEditor';
+import { getFieldNameMatcherItem } from './FieldNameMatcherEditor';
+import { getFieldNamesMatcherItem } from './FieldNamesMatcherEditor';
+import { getFieldTypeMatcherItem } from './FieldTypeMatcherEditor';
+import { getFieldValueMatcherItem } from './FieldValueMatcher';
+import { getFieldsByFrameRefIdItem } from './FieldsByFrameRefIdMatcher';
 import { FieldMatcherUIRegistryItem } from './types';
-import { fieldNameMatcherItem } from './FieldNameMatcherEditor';
-import { fieldNameByRegexMatcherItem } from './FieldNameByRegexMatcherEditor';
-import { fieldTypeMatcherItem } from './FieldTypeMatcherEditor';
-import { fieldsByFrameRefIdItem } from './FieldsByFrameRefIdMatcher';
-import { fieldNamesMatcherItem } from './FieldNamesMatcherEditor';
 
 export const fieldMatchersUI = new Registry<FieldMatcherUIRegistryItem<any>>(() => [
-  fieldNameMatcherItem,
-  fieldNameByRegexMatcherItem,
-  fieldTypeMatcherItem,
-  fieldsByFrameRefIdItem,
-  fieldNamesMatcherItem,
+  getFieldNameMatcherItem(),
+  getFieldNameByRegexMatcherItem(),
+  getFieldTypeMatcherItem(),
+  getFieldsByFrameRefIdItem(),
+  getFieldNamesMatcherItem(),
+  getFieldValueMatcherItem(),
 ]);

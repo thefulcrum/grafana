@@ -1,17 +1,18 @@
 // TODO: migrate tests below to the builder
 
-import { UPlotConfigBuilder } from './UPlotConfigBuilder';
+import { createTheme, ThresholdsMode } from '@grafana/data';
 import {
   GraphGradientMode,
   AxisPlacement,
-  DrawStyle,
-  PointVisibility,
+  GraphDrawStyle,
+  VisibilityMode,
   ScaleOrientation,
   ScaleDirection,
-  GraphTresholdsStyleMode,
-} from '../config';
-import { createTheme, ThresholdsMode } from '@grafana/data';
-import { ScaleDistribution } from '../models.gen';
+  GraphThresholdsStyleMode,
+  ScaleDistribution,
+} from '@grafana/schema';
+
+import { UPlotConfigBuilder } from './UPlotConfigBuilder';
 
 describe('UPlotConfigBuilder', () => {
   const darkTheme = createTheme();
@@ -20,27 +21,41 @@ describe('UPlotConfigBuilder', () => {
     it('builds default config', () => {
       const builder = new UPlotConfigBuilder();
       expect(builder.getConfig()).toMatchInlineSnapshot(`
-        Object {
-          "axes": Array [],
-          "cursor": Object {
-            "drag": Object {
+        {
+          "axes": [],
+          "cursor": {
+            "drag": {
               "setScale": false,
             },
-            "focus": Object {
+            "focus": {
               "prox": 30,
             },
-            "points": Object {
+            "points": {
               "fill": [Function],
               "size": [Function],
               "stroke": [Function],
               "width": [Function],
             },
           },
-          "hooks": Object {},
-          "scales": Object {},
+          "focus": {
+            "alpha": 1,
+          },
+          "hooks": {},
+          "legend": {
+            "show": false,
+          },
+          "mode": 1,
+          "ms": 1,
+          "padding": [
+            [Function],
+            [Function],
+            [Function],
+            [Function],
+          ],
+          "scales": {},
           "select": undefined,
-          "series": Array [
-            Object {
+          "series": [
+            {
               "value": [Function],
             },
           ],
@@ -69,32 +84,47 @@ describe('UPlotConfigBuilder', () => {
       });
 
       expect(builder.getConfig()).toMatchInlineSnapshot(`
-        Object {
-          "axes": Array [],
-          "cursor": Object {
-            "drag": Object {
+        {
+          "axes": [],
+          "cursor": {
+            "drag": {
               "setScale": false,
             },
-            "focus": Object {
+            "focus": {
               "prox": 30,
             },
-            "points": Object {
+            "points": {
               "fill": [Function],
               "size": [Function],
               "stroke": [Function],
               "width": [Function],
             },
           },
-          "hooks": Object {},
-          "scales": Object {
-            "scale-x": Object {
+          "focus": {
+            "alpha": 1,
+          },
+          "hooks": {},
+          "legend": {
+            "show": false,
+          },
+          "mode": 1,
+          "ms": 1,
+          "padding": [
+            [Function],
+            [Function],
+            [Function],
+            [Function],
+          ],
+          "scales": {
+            "scale-x": {
               "auto": false,
               "dir": 1,
               "ori": 0,
               "range": [Function],
               "time": true,
             },
-            "scale-y": Object {
+            "scale-y": {
+              "asinh": undefined,
               "auto": true,
               "dir": 1,
               "distr": 1,
@@ -105,8 +135,8 @@ describe('UPlotConfigBuilder', () => {
             },
           },
           "select": undefined,
-          "series": Array [
-            Object {
+          "series": [
+            {
               "value": [Function],
             },
           ],
@@ -147,25 +177,40 @@ describe('UPlotConfigBuilder', () => {
           distribution: ScaleDistribution.Linear,
         });
         expect(builder.getConfig()).toMatchInlineSnapshot(`
-          Object {
-            "axes": Array [],
-            "cursor": Object {
-              "drag": Object {
+          {
+            "axes": [],
+            "cursor": {
+              "drag": {
                 "setScale": false,
               },
-              "focus": Object {
+              "focus": {
                 "prox": 30,
               },
-              "points": Object {
+              "points": {
                 "fill": [Function],
                 "size": [Function],
                 "stroke": [Function],
                 "width": [Function],
               },
             },
-            "hooks": Object {},
-            "scales": Object {
-              "scale-y": Object {
+            "focus": {
+              "alpha": 1,
+            },
+            "hooks": {},
+            "legend": {
+              "show": false,
+            },
+            "mode": 1,
+            "ms": 1,
+            "padding": [
+              [Function],
+              [Function],
+              [Function],
+              [Function],
+            ],
+            "scales": {
+              "scale-y": {
+                "asinh": undefined,
                 "auto": true,
                 "dir": 1,
                 "distr": 1,
@@ -176,8 +221,8 @@ describe('UPlotConfigBuilder', () => {
               },
             },
             "select": undefined,
-            "series": Array [
-              Object {
+            "series": [
+              {
                 "value": [Function],
               },
             ],
@@ -198,25 +243,40 @@ describe('UPlotConfigBuilder', () => {
           });
 
           expect(builder.getConfig()).toMatchInlineSnapshot(`
-            Object {
-              "axes": Array [],
-              "cursor": Object {
-                "drag": Object {
+            {
+              "axes": [],
+              "cursor": {
+                "drag": {
                   "setScale": false,
                 },
-                "focus": Object {
+                "focus": {
                   "prox": 30,
                 },
-                "points": Object {
+                "points": {
                   "fill": [Function],
                   "size": [Function],
                   "stroke": [Function],
                   "width": [Function],
                 },
               },
-              "hooks": Object {},
-              "scales": Object {
-                "scale-y": Object {
+              "focus": {
+                "alpha": 1,
+              },
+              "hooks": {},
+              "legend": {
+                "show": false,
+              },
+              "mode": 1,
+              "ms": 1,
+              "padding": [
+                [Function],
+                [Function],
+                [Function],
+                [Function],
+              ],
+              "scales": {
+                "scale-y": {
+                  "asinh": undefined,
                   "auto": true,
                   "dir": 1,
                   "distr": 1,
@@ -227,8 +287,8 @@ describe('UPlotConfigBuilder', () => {
                 },
               },
               "select": undefined,
-              "series": Array [
-                Object {
+              "series": [
+                {
                   "value": [Function],
                 },
               ],
@@ -250,25 +310,40 @@ describe('UPlotConfigBuilder', () => {
           });
 
           expect(builder.getConfig()).toMatchInlineSnapshot(`
-            Object {
-              "axes": Array [],
-              "cursor": Object {
-                "drag": Object {
+            {
+              "axes": [],
+              "cursor": {
+                "drag": {
                   "setScale": false,
                 },
-                "focus": Object {
+                "focus": {
                   "prox": 30,
                 },
-                "points": Object {
+                "points": {
                   "fill": [Function],
                   "size": [Function],
                   "stroke": [Function],
                   "width": [Function],
                 },
               },
-              "hooks": Object {},
-              "scales": Object {
-                "scale-y": Object {
+              "focus": {
+                "alpha": 1,
+              },
+              "hooks": {},
+              "legend": {
+                "show": false,
+              },
+              "mode": 1,
+              "ms": 1,
+              "padding": [
+                [Function],
+                [Function],
+                [Function],
+                [Function],
+              ],
+              "scales": {
+                "scale-y": {
+                  "asinh": undefined,
                   "auto": true,
                   "dir": 1,
                   "distr": 1,
@@ -279,8 +354,8 @@ describe('UPlotConfigBuilder', () => {
                 },
               },
               "select": undefined,
-              "series": Array [
-                Object {
+              "series": [
+                {
                   "value": [Function],
                 },
               ],
@@ -304,8 +379,6 @@ describe('UPlotConfigBuilder', () => {
       max: 100,
     });
 
-    expect(builder.getConfig().scales!['scale-y']!.auto).toEqual(false);
-
     builder.addScale({
       isTime: false,
       scaleKey: 'scale-y2',
@@ -316,6 +389,7 @@ describe('UPlotConfigBuilder', () => {
       softMin: -50,
     });
 
+    expect(builder.getConfig().scales!['scale-y']!.auto).toEqual(false);
     expect(builder.getConfig().scales!['scale-y2']!.auto).toEqual(true);
   });
 
@@ -329,27 +403,30 @@ describe('UPlotConfigBuilder', () => {
       placement: AxisPlacement.Bottom,
       isTime: false,
       formatValue: () => 'test value',
-      grid: false,
+      grid: { show: false },
       show: true,
       theme: darkTheme,
       values: [],
     });
 
     expect(builder.getConfig()).toMatchInlineSnapshot(`
-      Object {
-        "axes": Array [
-          Object {
-            "font": "12px \\"Roboto\\", \\"Helvetica\\", \\"Arial\\", sans-serif",
+      {
+        "axes": [
+          {
+            "filter": undefined,
+            "font": "12px 'Inter', 'Helvetica', 'Arial', sans-serif",
             "gap": 5,
-            "grid": Object {
+            "grid": {
               "show": false,
               "stroke": "rgba(240, 250, 255, 0.09)",
               "width": 1,
             },
+            "incrs": undefined,
             "label": "test label",
-            "labelFont": "12px \\"Roboto\\", \\"Helvetica\\", \\"Arial\\", sans-serif",
+            "labelFont": "12px 'Inter', 'Helvetica', 'Arial', sans-serif",
             "labelGap": 8,
             "labelSize": 20,
+            "rotate": undefined,
             "scale": "scale-x",
             "show": true,
             "side": 2,
@@ -357,35 +434,49 @@ describe('UPlotConfigBuilder', () => {
             "space": [Function],
             "splits": undefined,
             "stroke": "rgb(204, 204, 220)",
-            "ticks": Object {
+            "ticks": {
               "show": true,
               "size": 4,
               "stroke": "rgba(240, 250, 255, 0.09)",
               "width": 1,
             },
             "timeZone": "browser",
-            "values": Array [],
+            "values": [],
           },
         ],
-        "cursor": Object {
-          "drag": Object {
+        "cursor": {
+          "drag": {
             "setScale": false,
           },
-          "focus": Object {
+          "focus": {
             "prox": 30,
           },
-          "points": Object {
+          "points": {
             "fill": [Function],
             "size": [Function],
             "stroke": [Function],
             "width": [Function],
           },
         },
-        "hooks": Object {},
-        "scales": Object {},
+        "focus": {
+          "alpha": 1,
+        },
+        "hooks": {},
+        "legend": {
+          "show": false,
+        },
+        "mode": 1,
+        "ms": 1,
+        "padding": [
+          [Function],
+          [Function],
+          [Function],
+          [Function],
+        ],
+        "scales": {},
         "select": undefined,
-        "series": Array [
-          Object {
+        "series": [
+          {
             "value": [Function],
           },
         ],
@@ -411,13 +502,12 @@ describe('UPlotConfigBuilder', () => {
 
     expect(builder.getAxisPlacement('y1')).toBe(AxisPlacement.Left);
     expect(builder.getAxisPlacement('y2')).toBe(AxisPlacement.Right);
-    expect(builder.getConfig().axes![1].grid!.show).toBe(false);
   });
 
   it('when fillColor is not set fill', () => {
     const builder = new UPlotConfigBuilder();
     builder.addSeries({
-      drawStyle: DrawStyle.Line,
+      drawStyle: GraphDrawStyle.Line,
       scaleKey: 'scale-x',
       lineColor: '#0000ff',
       theme: darkTheme,
@@ -429,7 +519,7 @@ describe('UPlotConfigBuilder', () => {
   it('when fillOpacity is set', () => {
     const builder = new UPlotConfigBuilder();
     builder.addSeries({
-      drawStyle: DrawStyle.Line,
+      drawStyle: GraphDrawStyle.Line,
       scaleKey: 'scale-x',
       lineColor: '#FFAABB',
       fillOpacity: 50,
@@ -442,7 +532,7 @@ describe('UPlotConfigBuilder', () => {
   it('when fillColor is set ignore fillOpacity', () => {
     const builder = new UPlotConfigBuilder();
     builder.addSeries({
-      drawStyle: DrawStyle.Line,
+      drawStyle: GraphDrawStyle.Line,
       scaleKey: 'scale-x',
       lineColor: '#FFAABB',
       fillOpacity: 50,
@@ -456,7 +546,7 @@ describe('UPlotConfigBuilder', () => {
   it('when fillGradient mode is opacity', () => {
     const builder = new UPlotConfigBuilder();
     builder.addSeries({
-      drawStyle: DrawStyle.Line,
+      drawStyle: GraphDrawStyle.Line,
       scaleKey: 'scale-x',
       lineColor: '#FFAABB',
       fillOpacity: 50,
@@ -470,11 +560,11 @@ describe('UPlotConfigBuilder', () => {
   it('allows series configuration', () => {
     const builder = new UPlotConfigBuilder();
     builder.addSeries({
-      drawStyle: DrawStyle.Line,
+      drawStyle: GraphDrawStyle.Line,
       scaleKey: 'scale-x',
       fillOpacity: 50,
       gradientMode: GraphGradientMode.Opacity,
-      showPoints: PointVisibility.Auto,
+      showPoints: VisibilityMode.Auto,
       pointSize: 5,
       lineColor: '#0000ff',
       lineWidth: 1,
@@ -483,33 +573,48 @@ describe('UPlotConfigBuilder', () => {
     });
 
     expect(builder.getConfig()).toMatchInlineSnapshot(`
-      Object {
-        "axes": Array [],
-        "cursor": Object {
-          "drag": Object {
+      {
+        "axes": [],
+        "cursor": {
+          "drag": {
             "setScale": false,
           },
-          "focus": Object {
+          "focus": {
             "prox": 30,
           },
-          "points": Object {
+          "points": {
             "fill": [Function],
             "size": [Function],
             "stroke": [Function],
             "width": [Function],
           },
         },
-        "hooks": Object {},
-        "scales": Object {},
+        "focus": {
+          "alpha": 1,
+        },
+        "hooks": {},
+        "legend": {
+          "show": false,
+        },
+        "mode": 1,
+        "ms": 1,
+        "padding": [
+          [Function],
+          [Function],
+          [Function],
+          [Function],
+        ],
+        "scales": {},
         "select": undefined,
-        "series": Array [
-          Object {
+        "series": [
+          {
             "value": [Function],
           },
-          Object {
+          {
+            "facets": undefined,
             "fill": [Function],
             "paths": [Function],
-            "points": Object {
+            "points": {
               "fill": "#0000ff",
               "filter": undefined,
               "size": 5,
@@ -532,24 +637,23 @@ describe('UPlotConfigBuilder', () => {
   describe('Stacking', () => {
     it('allows stacking config', () => {
       const builder = new UPlotConfigBuilder();
-      builder.setStacking();
       builder.addSeries({
-        drawStyle: DrawStyle.Line,
+        drawStyle: GraphDrawStyle.Line,
         scaleKey: 'scale-x',
         fillOpacity: 50,
         gradientMode: GraphGradientMode.Opacity,
-        showPoints: PointVisibility.Auto,
+        showPoints: VisibilityMode.Auto,
         lineColor: '#0000ff',
         lineWidth: 1,
         spanNulls: false,
         theme: darkTheme,
       });
       builder.addSeries({
-        drawStyle: DrawStyle.Line,
+        drawStyle: GraphDrawStyle.Line,
         scaleKey: 'scale-x',
         fillOpacity: 50,
         gradientMode: GraphGradientMode.Opacity,
-        showPoints: PointVisibility.Auto,
+        showPoints: VisibilityMode.Auto,
         pointSize: 5,
         lineColor: '#00ff00',
         lineWidth: 1,
@@ -558,11 +662,11 @@ describe('UPlotConfigBuilder', () => {
       });
 
       builder.addSeries({
-        drawStyle: DrawStyle.Line,
+        drawStyle: GraphDrawStyle.Line,
         scaleKey: 'scale-x',
         fillOpacity: 50,
         gradientMode: GraphGradientMode.Opacity,
-        showPoints: PointVisibility.Auto,
+        showPoints: VisibilityMode.Auto,
         pointSize: 5,
         lineColor: '#ff0000',
         lineWidth: 1,
@@ -580,49 +684,64 @@ describe('UPlotConfigBuilder', () => {
       });
 
       expect(builder.getConfig()).toMatchInlineSnapshot(`
-        Object {
-          "axes": Array [],
-          "bands": Array [
-            Object {
+        {
+          "axes": [],
+          "bands": [
+            {
               "fill": "red",
-              "series": Array [
+              "series": [
                 3,
                 2,
               ],
             },
-            Object {
+            {
               "fill": "blue",
-              "series": Array [
+              "series": [
                 2,
                 1,
               ],
             },
           ],
-          "cursor": Object {
-            "drag": Object {
+          "cursor": {
+            "drag": {
               "setScale": false,
             },
-            "focus": Object {
+            "focus": {
               "prox": 30,
             },
-            "points": Object {
+            "points": {
               "fill": [Function],
               "size": [Function],
               "stroke": [Function],
               "width": [Function],
             },
           },
-          "hooks": Object {},
-          "scales": Object {},
+          "focus": {
+            "alpha": 1,
+          },
+          "hooks": {},
+          "legend": {
+            "show": false,
+          },
+          "mode": 1,
+          "ms": 1,
+          "padding": [
+            [Function],
+            [Function],
+            [Function],
+            [Function],
+          ],
+          "scales": {},
           "select": undefined,
-          "series": Array [
-            Object {
+          "series": [
+            {
               "value": [Function],
             },
-            Object {
+            {
+              "facets": undefined,
               "fill": [Function],
               "paths": [Function],
-              "points": Object {
+              "points": {
                 "fill": "#0000ff",
                 "filter": undefined,
                 "size": undefined,
@@ -636,10 +755,11 @@ describe('UPlotConfigBuilder', () => {
               "value": [Function],
               "width": 1,
             },
-            Object {
+            {
+              "facets": undefined,
               "fill": [Function],
               "paths": [Function],
-              "points": Object {
+              "points": {
                 "fill": "#00ff00",
                 "filter": undefined,
                 "size": 5,
@@ -653,10 +773,11 @@ describe('UPlotConfigBuilder', () => {
               "value": [Function],
               "width": 1,
             },
-            Object {
+            {
+              "facets": undefined,
               "fill": [Function],
               "paths": [Function],
-              "points": Object {
+              "points": {
                 "fill": "#ff0000",
                 "filter": undefined,
                 "size": 5,
@@ -690,7 +811,7 @@ describe('UPlotConfigBuilder', () => {
           steps: [],
         },
         config: {
-          mode: GraphTresholdsStyleMode.Area,
+          mode: GraphThresholdsStyleMode.Area,
         },
         theme: darkTheme,
       });
@@ -701,12 +822,103 @@ describe('UPlotConfigBuilder', () => {
           steps: [],
         },
         config: {
-          mode: GraphTresholdsStyleMode.Area,
+          mode: GraphThresholdsStyleMode.Area,
         },
         theme: darkTheme,
       });
 
       expect(addHookFn).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Grid lines visibility', () => {
+    it('handles auto behaviour', () => {
+      const builder = new UPlotConfigBuilder();
+      builder.addAxis({
+        scaleKey: 'x',
+        placement: AxisPlacement.Bottom,
+        theme: darkTheme,
+      });
+
+      builder.addAxis({
+        scaleKey: 'y1',
+        theme: darkTheme,
+      });
+
+      builder.addAxis({
+        scaleKey: 'y2',
+        theme: darkTheme,
+      });
+      builder.addAxis({
+        scaleKey: 'y3',
+        theme: darkTheme,
+      });
+
+      const axesConfig = builder.getConfig().axes!;
+
+      expect(axesConfig[0].grid!.show).toBe(true);
+      expect(axesConfig[1].grid!.show).toBe(true);
+      expect(axesConfig[2].grid!.show).toBe(false);
+      expect(axesConfig[3].grid!.show).toBe(false);
+    });
+
+    it('handles auto behaviour with explicite grid settings', () => {
+      const builder = new UPlotConfigBuilder();
+      builder.addAxis({
+        scaleKey: 'x',
+        placement: AxisPlacement.Bottom,
+        theme: darkTheme,
+      });
+
+      builder.addAxis({
+        scaleKey: 'y1',
+        theme: darkTheme,
+      });
+
+      builder.addAxis({
+        scaleKey: 'y2',
+        grid: { show: true },
+        theme: darkTheme,
+      });
+      builder.addAxis({
+        scaleKey: 'y3',
+        theme: darkTheme,
+      });
+
+      const axesConfig = builder.getConfig().axes!;
+
+      expect(axesConfig[0].grid!.show).toBe(true);
+      expect(axesConfig[1].grid!.show).toBe(true);
+      expect(axesConfig[2].grid!.show).toBe(true);
+      expect(axesConfig[3].grid!.show).toBe(false);
+    });
+
+    it('handles explicit grid settings', () => {
+      const builder = new UPlotConfigBuilder();
+      builder.addAxis({
+        scaleKey: 'x',
+        grid: { show: false },
+        placement: AxisPlacement.Bottom,
+        theme: darkTheme,
+      });
+
+      builder.addAxis({
+        scaleKey: 'y1',
+        grid: { show: false },
+        theme: darkTheme,
+      });
+
+      builder.addAxis({
+        scaleKey: 'y2',
+        grid: { show: true },
+        theme: darkTheme,
+      });
+
+      const axesConfig = builder.getConfig().axes!;
+
+      expect(axesConfig[0].grid!.show).toBe(false);
+      expect(axesConfig[1].grid!.show).toBe(false);
+      expect(axesConfig[2].grid!.show).toBe(true);
     });
   });
 });

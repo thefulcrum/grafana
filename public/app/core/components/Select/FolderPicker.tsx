@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { PureComponent } from 'react';
 import { debounce } from 'lodash';
 import { AsyncSelect } from '@grafana/ui';
@@ -207,3 +208,8 @@ export async function getInitialValues({ folderName, folderId, getFolder }: Args
   const folderDto = await getFolder(folderId);
   return { label: folderDto.title, value: folderId };
 }
+=======
+import { NestedFolderPicker } from '../NestedFolderPicker/NestedFolderPicker';
+
+export const FolderPicker = NestedFolderPicker;
+>>>>>>> v12.1.0

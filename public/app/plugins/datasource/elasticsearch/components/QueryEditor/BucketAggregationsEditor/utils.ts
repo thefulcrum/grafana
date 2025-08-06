@@ -1,6 +1,13 @@
+import { InternalTimeZones, SelectableValue } from '@grafana/data';
+
+import { defaultGeoHashPrecisionString } from '../../../queryDef';
 import { BucketsConfiguration } from '../../../types';
+
 import { defaultFilter } from './SettingsEditor/FiltersSettingsEditor/utils';
+<<<<<<< HEAD
 import { SelectableValue } from '@grafana/data';
+=======
+>>>>>>> v12.1.0
 
 export const bucketAggregationConfig: BucketsConfiguration = {
   terms: {
@@ -24,7 +31,7 @@ export const bucketAggregationConfig: BucketsConfiguration = {
     label: 'Geo Hash Grid',
     requiresField: true,
     defaultSettings: {
-      precision: '3',
+      precision: defaultGeoHashPrecisionString,
     },
   },
   date_histogram: {
@@ -34,6 +41,7 @@ export const bucketAggregationConfig: BucketsConfiguration = {
       interval: 'auto',
       min_doc_count: '0',
       trimEdges: '0',
+      timeZone: InternalTimeZones.utc,
     },
   },
   histogram: {
@@ -43,6 +51,11 @@ export const bucketAggregationConfig: BucketsConfiguration = {
       interval: '1000',
       min_doc_count: '0',
     },
+  },
+  nested: {
+    label: 'Nested (experimental)',
+    requiresField: true,
+    defaultSettings: {},
   },
 };
 
@@ -55,6 +68,7 @@ export const orderOptions: Array<SelectableValue<string>> = [
   { label: 'Top', value: 'desc' },
   { label: 'Bottom', value: 'asc' },
 ];
+<<<<<<< HEAD
 
 export const sizeOptions = [
   { label: 'No limit', value: '0' },
@@ -66,3 +80,5 @@ export const sizeOptions = [
   { label: '15', value: '15' },
   { label: '20', value: '20' },
 ];
+=======
+>>>>>>> v12.1.0

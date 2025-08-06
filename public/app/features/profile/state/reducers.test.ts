@@ -1,5 +1,8 @@
+import { OrgRole } from '@grafana/data';
+
 import { reducerTester } from '../../../../test/core/redux/reducerTester';
-import { OrgRole, TeamPermissionLevel } from '../../../types';
+import { getMockTeam } from '../../teams/mocks/teamMocks';
+
 import {
   initialUserState,
   orgsLoaded,
@@ -7,6 +10,7 @@ import {
   setUpdating,
   teamsLoaded,
   updateTimeZone,
+  updateWeekStart,
   userLoaded,
   userReducer,
   userSessionRevoked,
@@ -14,7 +18,7 @@ import {
 } from './reducers';
 
 describe('userReducer', () => {
-  let dateNow: any;
+  let dateNow: jest.SpyInstance;
 
   beforeAll(() => {
     dateNow = jest.spyOn(Date, 'now').mockImplementation(() => 1609470000000); // 2021-01-01 04:00:00
@@ -30,6 +34,15 @@ describe('userReducer', () => {
         .givenReducer(userReducer, { ...initialUserState })
         .whenActionIsDispatched(updateTimeZone({ timeZone: 'xyz' }))
         .thenStateShouldEqual({ ...initialUserState, timeZone: 'xyz' });
+    });
+  });
+
+  describe('when updateWeekStart is dispatched', () => {
+    it('then state should be correct', () => {
+      reducerTester<UserState>()
+        .givenReducer(userReducer, { ...initialUserState })
+        .whenActionIsDispatched(updateWeekStart({ weekStart: 'xyz' }))
+        .thenStateShouldEqual({ ...initialUserState, weekStart: 'xyz' });
     });
   });
 
@@ -50,6 +63,7 @@ describe('userReducer', () => {
           userLoaded({
             user: {
               id: 2021,
+              uid: 'aaaaaa',
               email: 'test@test.com',
               isDisabled: true,
               login: 'test',
@@ -62,6 +76,7 @@ describe('userReducer', () => {
           ...initialUserState,
           user: {
             id: 2021,
+            uid: 'aaaaaa',
             email: 'test@test.com',
             isDisabled: true,
             login: 'test',
@@ -78,31 +93,13 @@ describe('userReducer', () => {
         .givenReducer(userReducer, { ...initialUserState, teamsAreLoading: true })
         .whenActionIsDispatched(
           teamsLoaded({
-            teams: [
-              {
-                id: 1,
-                email: 'team@team.com',
-                name: 'Team',
-                avatarUrl: '/avatar/12345',
-                memberCount: 4,
-                permission: TeamPermissionLevel.Admin,
-              },
-            ],
+            teams: [getMockTeam(1, 'aaaaaa')],
           })
         )
         .thenStateShouldEqual({
           ...initialUserState,
           teamsAreLoading: false,
-          teams: [
-            {
-              id: 1,
-              email: 'team@team.com',
-              name: 'Team',
-              avatarUrl: '/avatar/12345',
-              memberCount: 4,
-              permission: TeamPermissionLevel.Admin,
-            },
-          ],
+          teams: [getMockTeam(1, 'aaaaaa')],
         });
     });
   });
@@ -156,7 +153,7 @@ describe('userReducer', () => {
               browserVersion: '90',
               osVersion: '95',
               clientIp: '192.168.1.1',
-              createdAt: 'December 31, 2020',
+              createdAt: '2021-01-01 04:00:00',
               device: 'Computer',
               os: 'Windows',
               isActive: false,

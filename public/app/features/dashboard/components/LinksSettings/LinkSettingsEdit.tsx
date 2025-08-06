@@ -1,37 +1,10 @@
-import React, { useState } from 'react';
-import { CollapsableSection, TagsInput, Select, Field, Input, Checkbox } from '@grafana/ui';
-import { SelectableValue } from '@grafana/data';
-import { DashboardLink, DashboardModel } from '../../state/DashboardModel';
+import { useState } from 'react';
 
-export const newLink = {
-  icon: 'external link',
-  title: 'New link',
-  tooltip: '',
-  type: 'dashboards',
-  url: '',
-  asDropdown: false,
-  tags: [],
-  targetBlank: false,
-  keepTime: false,
-  includeVars: false,
-} as DashboardLink;
+import { DashboardLink } from '@grafana/schema';
+import { DashboardLinkForm } from 'app/features/dashboard-scene/settings/links/DashboardLinkForm';
+import { NEW_LINK } from 'app/features/dashboard-scene/settings/links/utils';
 
-const linkTypeOptions = [
-  { value: 'dashboards', label: 'Dashboards' },
-  { value: 'link', label: 'Link' },
-];
-
-export const linkIconMap: { [key: string]: string } = {
-  'external link': 'external-link-alt',
-  dashboard: 'apps',
-  question: 'question-circle',
-  info: 'info-circle',
-  bolt: 'bolt',
-  doc: 'file-alt',
-  cloud: 'cloud',
-};
-
-const linkIconOptions = Object.keys(linkIconMap).map((key) => ({ label: key, value: key }));
+import { DashboardModel } from '../../state/DashboardModel';
 
 type LinkSettingsEditProps = {
   editLinkIdx: number;
@@ -39,8 +12,8 @@ type LinkSettingsEditProps = {
   onGoBack: () => void;
 };
 
-export const LinkSettingsEdit: React.FC<LinkSettingsEditProps> = ({ editLinkIdx, dashboard }) => {
-  const [linkSettings, setLinkSettings] = useState(editLinkIdx !== null ? dashboard.links[editLinkIdx] : newLink);
+export const LinkSettingsEdit = ({ editLinkIdx, dashboard, onGoBack }: LinkSettingsEditProps) => {
+  const [linkSettings, setLinkSettings] = useState(editLinkIdx !== null ? dashboard.links[editLinkIdx] : NEW_LINK);
 
   const onUpdate = (link: DashboardLink) => {
     const links = [...dashboard.links];
@@ -49,6 +22,7 @@ export const LinkSettingsEdit: React.FC<LinkSettingsEditProps> = ({ editLinkIdx,
     setLinkSettings(link);
   };
 
+<<<<<<< HEAD
   const onTagsChange = (tags: any[]) => {
     onUpdate({ ...linkSettings, tags: tags });
   };
@@ -142,4 +116,7 @@ export const LinkSettingsEdit: React.FC<LinkSettingsEditProps> = ({ editLinkIdx,
       </CollapsableSection>
     </div>
   );
+=======
+  return <DashboardLinkForm link={linkSettings} onUpdate={onUpdate} onGoBack={onGoBack} />;
+>>>>>>> v12.1.0
 };

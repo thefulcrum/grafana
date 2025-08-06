@@ -2,407 +2,18 @@ package definitions
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 
+	alertingTemplates "github.com/grafana/alerting/templates"
 	"github.com/prometheus/alertmanager/config"
+	"github.com/prometheus/alertmanager/pkg/labels"
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
-
-func Test_ApiReceiver_Marshaling(t *testing.T) {
-	for _, tc := range []struct {
-		desc  string
-		input PostableApiReceiver
-		err   bool
-	}{
-		{
-			desc: "success AM",
-			input: PostableApiReceiver{
-				Receiver: config.Receiver{
-					Name:         "foo",
-					EmailConfigs: []*config.EmailConfig{{}},
-				},
-			},
-		},
-		{
-			desc: "success GM",
-			input: PostableApiReceiver{
-				Receiver: config.Receiver{
-					Name: "foo",
-				},
-				PostableGrafanaReceivers: PostableGrafanaReceivers{
-					GrafanaManagedReceivers: []*PostableGrafanaReceiver{{}},
-				},
-			},
-		},
-		{
-			desc: "failure mixed",
-			input: PostableApiReceiver{
-				Receiver: config.Receiver{
-					Name:         "foo",
-					EmailConfigs: []*config.EmailConfig{{}},
-				},
-				PostableGrafanaReceivers: PostableGrafanaReceivers{
-					GrafanaManagedReceivers: []*PostableGrafanaReceiver{{}},
-				},
-			},
-			err: true,
-		},
-	} {
-		t.Run(tc.desc, func(t *testing.T) {
-			encoded, err := json.Marshal(tc.input)
-			require.Nil(t, err)
-
-			var out PostableApiReceiver
-			err = json.Unmarshal(encoded, &out)
-
-			if tc.err {
-				require.Error(t, err)
-			} else {
-				require.Nil(t, err)
-				require.Equal(t, tc.input, out)
-			}
-		})
-	}
-}
-
-func Test_APIReceiverType(t *testing.T) {
-	for _, tc := range []struct {
-		desc     string
-		input    PostableApiReceiver
-		expected ReceiverType
-	}{
-		{
-			desc: "empty",
-			input: PostableApiReceiver{
-				Receiver: config.Receiver{
-					Name: "foo",
-				},
-			},
-			expected: EmptyReceiverType,
-		},
-		{
-			desc: "am",
-			input: PostableApiReceiver{
-				Receiver: config.Receiver{
-					Name:         "foo",
-					EmailConfigs: []*config.EmailConfig{{}},
-				},
-			},
-			expected: AlertmanagerReceiverType,
-		},
-		{
-			desc: "graf",
-			input: PostableApiReceiver{
-				Receiver: config.Receiver{
-					Name: "foo",
-				},
-				PostableGrafanaReceivers: PostableGrafanaReceivers{
-					GrafanaManagedReceivers: []*PostableGrafanaReceiver{{}},
-				},
-			},
-			expected: GrafanaReceiverType,
-		},
-	} {
-		t.Run(tc.desc, func(t *testing.T) {
-			require.Equal(t, tc.expected, tc.input.Type())
-		})
-	}
-}
-
-func Test_AllReceivers(t *testing.T) {
-	input := &config.Route{
-		Receiver: "foo",
-		Routes: []*config.Route{
-			{
-				Receiver: "bar",
-				Routes: []*config.Route{
-					{
-						Receiver: "bazz",
-					},
-				},
-			},
-			{
-				Receiver: "buzz",
-			},
-		},
-	}
-
-	require.Equal(t, []string{"foo", "bar", "bazz", "buzz"}, AllReceivers(input))
-
-	// test empty
-	var empty []string
-	require.Equal(t, empty, AllReceivers(&config.Route{}))
-}
-
-func Test_ApiAlertingConfig_Marshaling(t *testing.T) {
-	for _, tc := range []struct {
-		desc  string
-		input PostableApiAlertingConfig
-		err   bool
-	}{
-		{
-			desc: "success am",
-			input: PostableApiAlertingConfig{
-				Config: Config{
-					Route: &config.Route{
-						Receiver: "am",
-						Routes: []*config.Route{
-							{
-								Receiver: "am",
-							},
-						},
-					},
-				},
-				Receivers: []*PostableApiReceiver{
-					{
-						Receiver: config.Receiver{
-							Name:         "am",
-							EmailConfigs: []*config.EmailConfig{{}},
-						},
-					},
-				},
-			},
-		},
-		{
-			desc: "success graf",
-			input: PostableApiAlertingConfig{
-				Config: Config{
-					Route: &config.Route{
-						Receiver: "graf",
-						Routes: []*config.Route{
-							{
-								Receiver: "graf",
-							},
-						},
-					},
-				},
-				Receivers: []*PostableApiReceiver{
-					{
-						Receiver: config.Receiver{
-							Name: "graf",
-						},
-						PostableGrafanaReceivers: PostableGrafanaReceivers{
-							GrafanaManagedReceivers: []*PostableGrafanaReceiver{{}},
-						},
-					},
-				},
-			},
-		},
-		{
-			desc: "failure undefined am receiver",
-			input: PostableApiAlertingConfig{
-				Config: Config{
-					Route: &config.Route{
-						Receiver: "am",
-						Routes: []*config.Route{
-							{
-								Receiver: "unmentioned",
-							},
-						},
-					},
-				},
-				Receivers: []*PostableApiReceiver{
-					{
-						Receiver: config.Receiver{
-							Name:         "am",
-							EmailConfigs: []*config.EmailConfig{{}},
-						},
-					},
-				},
-			},
-			err: true,
-		},
-		{
-			desc: "failure undefined graf receiver",
-			input: PostableApiAlertingConfig{
-				Config: Config{
-					Route: &config.Route{
-						Receiver: "graf",
-						Routes: []*config.Route{
-							{
-								Receiver: "unmentioned",
-							},
-						},
-					},
-				},
-				Receivers: []*PostableApiReceiver{
-					{
-						Receiver: config.Receiver{
-							Name: "graf",
-						},
-						PostableGrafanaReceivers: PostableGrafanaReceivers{
-							GrafanaManagedReceivers: []*PostableGrafanaReceiver{{}},
-						},
-					},
-				},
-			},
-			err: true,
-		},
-		{
-			desc: "failure graf no route",
-			input: PostableApiAlertingConfig{
-				Receivers: []*PostableApiReceiver{
-					{
-						Receiver: config.Receiver{
-							Name: "graf",
-						},
-						PostableGrafanaReceivers: PostableGrafanaReceivers{
-							GrafanaManagedReceivers: []*PostableGrafanaReceiver{{}},
-						},
-					},
-				},
-			},
-			err: true,
-		},
-		{
-			desc: "failure graf no default receiver",
-			input: PostableApiAlertingConfig{
-				Config: Config{
-					Route: &config.Route{
-						Routes: []*config.Route{
-							{
-								Receiver: "graf",
-							},
-						},
-					},
-				},
-				Receivers: []*PostableApiReceiver{
-					{
-						Receiver: config.Receiver{
-							Name: "graf",
-						},
-						PostableGrafanaReceivers: PostableGrafanaReceivers{
-							GrafanaManagedReceivers: []*PostableGrafanaReceiver{{}},
-						},
-					},
-				},
-			},
-			err: true,
-		},
-		{
-			desc: "failure graf root route with matchers",
-			input: PostableApiAlertingConfig{
-				Config: Config{
-					Route: &config.Route{
-						Receiver: "graf",
-						Routes: []*config.Route{
-							{
-								Receiver: "graf",
-							},
-						},
-						Match: map[string]string{"foo": "bar"},
-					},
-				},
-				Receivers: []*PostableApiReceiver{
-					{
-						Receiver: config.Receiver{
-							Name: "graf",
-						},
-						PostableGrafanaReceivers: PostableGrafanaReceivers{
-							GrafanaManagedReceivers: []*PostableGrafanaReceiver{{}},
-						},
-					},
-				},
-			},
-			err: true,
-		},
-		{
-			desc: "failure graf nested route duplicate group by labels",
-			input: PostableApiAlertingConfig{
-				Config: Config{
-					Route: &config.Route{
-						Receiver: "graf",
-						Routes: []*config.Route{
-							{
-								Receiver:   "graf",
-								GroupByStr: []string{"foo", "bar", "foo"},
-							},
-						},
-					},
-				},
-				Receivers: []*PostableApiReceiver{
-					{
-						Receiver: config.Receiver{
-							Name: "graf",
-						},
-						PostableGrafanaReceivers: PostableGrafanaReceivers{
-							GrafanaManagedReceivers: []*PostableGrafanaReceiver{{}},
-						},
-					},
-				},
-			},
-			err: true,
-		},
-	} {
-		t.Run(tc.desc, func(t *testing.T) {
-			encoded, err := json.Marshal(tc.input)
-			require.Nil(t, err)
-
-			var out PostableApiAlertingConfig
-			err = json.Unmarshal(encoded, &out)
-
-			if tc.err {
-				require.Error(t, err)
-			} else {
-				require.Nil(t, err)
-				require.Equal(t, tc.input, out)
-			}
-		})
-	}
-}
-
-func Test_PostableApiReceiver_Unmarshaling_YAML(t *testing.T) {
-	for _, tc := range []struct {
-		desc  string
-		input string
-		rtype ReceiverType
-	}{
-		{
-			desc: "grafana receivers",
-			input: `
-name: grafana_managed
-grafana_managed_receiver_configs:
-  - uid: alertmanager UID
-    name: an alert manager receiver
-    type: prometheus-alertmanager
-    sendreminder: false
-    disableresolvemessage: false
-    frequency: 5m
-    isdefault: false
-    settings: {}
-    securesettings:
-      basicAuthPassword: <basicAuthPassword>
-  - uid: dingding UID
-    name: a dingding receiver
-    type: dingding
-    sendreminder: false
-    disableresolvemessage: false
-    frequency: 5m
-    isdefault: false`,
-			rtype: GrafanaReceiverType,
-		},
-		{
-			desc: "receiver",
-			input: `
-name: example-email
-email_configs:
-  - to: 'youraddress@example.org'`,
-			rtype: AlertmanagerReceiverType,
-		},
-	} {
-		t.Run(tc.desc, func(t *testing.T) {
-			var r PostableApiReceiver
-			err := yaml.Unmarshal([]byte(tc.input), &r)
-			require.Nil(t, err)
-			assert.Equal(t, tc.rtype, r.Type())
-		})
-	}
-}
 
 func Test_GettableUserConfigUnmarshaling(t *testing.T) {
 	for _, tc := range []struct {
@@ -481,9 +92,9 @@ alertmanager_config: |
 				AlertmanagerConfig: GettableApiAlertingConfig{
 					Config: Config{
 						Templates: []string{},
-						Route: &config.Route{
+						Route: &Route{
 							Receiver: "am",
-							Routes: []*config.Route{
+							Routes: []*Route{
 								{
 									Receiver: "am",
 								},
@@ -518,7 +129,7 @@ alertmanager_config: |
 				return
 			}
 			require.Nil(t, err)
-			// Override the map[string]interface{} field for test simplicity.
+			// Override the map[string]any field for test simplicity.
 			// It's tested in Test_GettableUserConfigRoundtrip.
 			out.amSimple = nil
 			require.Equal(t, tc.output, out)
@@ -529,10 +140,10 @@ alertmanager_config: |
 func Test_GettableUserConfigRoundtrip(t *testing.T) {
 	// raw contains secret fields. We'll unmarshal, re-marshal, and ensure
 	// the fields are not redacted.
-	yamlEncoded, err := ioutil.ReadFile("alertmanager_test_artifact.yaml")
+	yamlEncoded, err := os.ReadFile("alertmanager_test_artifact.yaml")
 	require.Nil(t, err)
 
-	jsonEncoded, err := ioutil.ReadFile("alertmanager_test_artifact.json")
+	jsonEncoded, err := os.ReadFile("alertmanager_test_artifact.json")
 	require.Nil(t, err)
 
 	// test GettableUserConfig (yamlDecode -> jsonEncode)
@@ -550,123 +161,245 @@ func Test_GettableUserConfigRoundtrip(t *testing.T) {
 	require.Equal(t, string(yamlEncoded), string(out))
 }
 
-func Test_ReceiverCompatibility(t *testing.T) {
-	for _, tc := range []struct {
-		desc     string
-		a, b     ReceiverType
-		expected bool
-	}{
-		{
-			desc:     "grafana=grafana",
-			a:        GrafanaReceiverType,
-			b:        GrafanaReceiverType,
-			expected: true,
-		},
-		{
-			desc:     "am=am",
-			a:        AlertmanagerReceiverType,
-			b:        AlertmanagerReceiverType,
-			expected: true,
-		},
-		{
-			desc:     "empty=grafana",
-			a:        EmptyReceiverType,
-			b:        AlertmanagerReceiverType,
-			expected: true,
-		},
-		{
-			desc:     "empty=am",
-			a:        EmptyReceiverType,
-			b:        AlertmanagerReceiverType,
-			expected: true,
-		},
-		{
-			desc:     "empty=empty",
-			a:        EmptyReceiverType,
-			b:        EmptyReceiverType,
-			expected: true,
-		},
-		{
-			desc:     "graf!=am",
-			a:        GrafanaReceiverType,
-			b:        AlertmanagerReceiverType,
-			expected: false,
-		},
-		{
-			desc:     "am!=graf",
-			a:        AlertmanagerReceiverType,
-			b:        GrafanaReceiverType,
-			expected: false,
-		},
-	} {
-		t.Run(tc.desc, func(t *testing.T) {
-			require.Equal(t, tc.expected, tc.a.Can(tc.b))
-		})
-	}
-}
-
-func Test_ReceiverMatchesBackend(t *testing.T) {
-	for _, tc := range []struct {
-		desc string
-		rec  ReceiverType
-		b    Backend
-		err  bool
-	}{
-		{
-			desc: "graf=graf",
-			rec:  GrafanaReceiverType,
-			b:    GrafanaBackend,
-			err:  false,
-		},
-		{
-			desc: "empty=graf",
-			rec:  EmptyReceiverType,
-			b:    GrafanaBackend,
-			err:  false,
-		},
-		{
-			desc: "am=am",
-			rec:  AlertmanagerReceiverType,
-			b:    AlertmanagerBackend,
-			err:  false,
-		},
-		{
-			desc: "empty=am",
-			rec:  EmptyReceiverType,
-			b:    AlertmanagerBackend,
-			err:  false,
-		},
-		{
-			desc: "graf!=am",
-			rec:  GrafanaReceiverType,
-			b:    AlertmanagerBackend,
-			err:  true,
-		},
-		{
-			desc: "am!=ruler",
-			rec:  GrafanaReceiverType,
-			b:    LoTexRulerBackend,
-			err:  true,
-		},
-	} {
-		t.Run(tc.desc, func(t *testing.T) {
-			err := tc.rec.MatchesBackend(tc.b)
-			if tc.err {
-				require.NotNil(t, err)
-			} else {
-				require.Nil(t, err)
-			}
-		})
-	}
-}
-
 func Test_Marshaling_Validation(t *testing.T) {
-	jsonEncoded, err := ioutil.ReadFile("alertmanager_test_artifact.json")
+	jsonEncoded, err := os.ReadFile("alertmanager_test_artifact.json")
 	require.Nil(t, err)
 
 	var tmp GettableUserConfig
 	require.Nil(t, json.Unmarshal(jsonEncoded, &tmp))
 
 	expected := []model.LabelName{"alertname"}
-	require.Equal(t, expected, tmp.AlertmanagerConfig.Config.Route.GroupBy)
+	require.Equal(t, expected, tmp.AlertmanagerConfig.Route.GroupBy)
+}
+
+func Test_RawMessageMarshaling(t *testing.T) {
+	type Data struct {
+		Field RawMessage `json:"field" yaml:"field"`
+	}
+
+	t.Run("should unmarshal nil", func(t *testing.T) {
+		v := Data{
+			Field: nil,
+		}
+		data, err := json.Marshal(v)
+		require.NoError(t, err)
+		assert.JSONEq(t, `{ "field": null }`, string(data))
+
+		var n Data
+		require.NoError(t, json.Unmarshal(data, &n))
+		assert.Equal(t, RawMessage("null"), n.Field)
+
+		data, err = yaml.Marshal(&v)
+		require.NoError(t, err)
+		assert.Equal(t, "field: null\n", string(data))
+
+		require.NoError(t, yaml.Unmarshal(data, &n))
+		assert.Nil(t, n.Field)
+	})
+
+	t.Run("should unmarshal value", func(t *testing.T) {
+		v := Data{
+			Field: RawMessage(`{ "data": "test"}`),
+		}
+		data, err := json.Marshal(v)
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"field":{"data":"test"}}`, string(data))
+
+		var n Data
+		require.NoError(t, json.Unmarshal(data, &n))
+		assert.Equal(t, RawMessage(`{"data":"test"}`), n.Field)
+
+		data, err = yaml.Marshal(&v)
+		require.NoError(t, err)
+		assert.Equal(t, "field:\n    data: test\n", string(data))
+
+		require.NoError(t, yaml.Unmarshal(data, &n))
+		assert.Equal(t, RawMessage(`{"data":"test"}`), n.Field)
+	})
+}
+
+func TestPostableUserConfig_GetMergedAlertmanagerConfig(t *testing.T) {
+	alertmanagerCfg := PostableApiAlertingConfig{
+		Config: Config{
+			Route: &Route{
+				Receiver: "default",
+			},
+		},
+		Receivers: []*PostableApiReceiver{
+			{
+				Receiver: config.Receiver{
+					Name: "default",
+				},
+			},
+		},
+	}
+
+	testCases := []struct {
+		name          string
+		config        PostableUserConfig
+		expectedError string
+	}{
+		{
+			name: "no extra configs",
+			config: PostableUserConfig{
+				AlertmanagerConfig: alertmanagerCfg,
+			},
+		},
+		{
+			name: "valid mimir config",
+			config: PostableUserConfig{
+				AlertmanagerConfig: alertmanagerCfg,
+				ExtraConfigs: []ExtraConfiguration{
+					{
+						Identifier: "mimir-1",
+						MergeMatchers: config.Matchers{
+							{
+								Type:  labels.MatchEqual,
+								Name:  "cluster",
+								Value: "prod",
+							},
+						},
+						AlertmanagerConfig: `route:
+  receiver: mimir-receiver
+receivers:
+  - name: mimir-receiver`,
+					},
+				},
+			},
+		},
+		{
+			name: "empty identifier",
+			config: PostableUserConfig{
+				AlertmanagerConfig: alertmanagerCfg,
+				ExtraConfigs: []ExtraConfiguration{
+					{
+						Identifier:    "",
+						MergeMatchers: config.Matchers{},
+						AlertmanagerConfig: `{
+							"route": {
+								"receiver": "test"
+							}
+						}`,
+					},
+				},
+			},
+			expectedError: "invalid merge options",
+		},
+		{
+			name: "bad matcher type",
+			config: PostableUserConfig{
+				AlertmanagerConfig: alertmanagerCfg,
+				ExtraConfigs: []ExtraConfiguration{
+					{
+						Identifier: "test",
+						MergeMatchers: config.Matchers{
+							{
+								Type:  labels.MatchNotEqual,
+								Name:  "cluster",
+								Value: "prod",
+							},
+						},
+					},
+				},
+			},
+			expectedError: "only equality matchers are allowed",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := tc.config.GetMergedAlertmanagerConfig()
+			if tc.expectedError != "" {
+				require.Error(t, err)
+				require.ErrorContains(t, err, tc.expectedError)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, result.Config)
+			}
+		})
+	}
+}
+
+func TestPostableUserConfig_GetMergedTemplateDefinitions(t *testing.T) {
+	testCases := []struct {
+		name              string
+		config            PostableUserConfig
+		expectedTemplates int
+	}{
+		{
+			name: "no templates",
+			config: PostableUserConfig{
+				TemplateFiles: map[string]string{},
+				ExtraConfigs:  []ExtraConfiguration{},
+			},
+			expectedTemplates: 0,
+		},
+		{
+			name: "grafana templates only",
+			config: PostableUserConfig{
+				TemplateFiles: map[string]string{
+					"grafana-template1": "{{ define \"test\" }}Hello{{ end }}",
+					"grafana-template2": "{{ define \"test2\" }}World{{ end }}",
+				},
+				ExtraConfigs: []ExtraConfiguration{},
+			},
+			expectedTemplates: 2,
+		},
+		{
+			name: "mimir templates only",
+			config: PostableUserConfig{
+				TemplateFiles: map[string]string{},
+				ExtraConfigs: []ExtraConfiguration{
+					{
+						TemplateFiles: map[string]string{
+							"mimir-template": "{{ define \"mimir\" }}Mimir{{ end }}",
+						},
+					},
+				},
+			},
+			expectedTemplates: 1,
+		},
+		{
+			name: "mixed templates",
+			config: PostableUserConfig{
+				TemplateFiles: map[string]string{
+					"grafana-template": "{{ define \"grafana\" }}Grafana{{ end }}",
+				},
+				ExtraConfigs: []ExtraConfiguration{
+					{
+						TemplateFiles: map[string]string{
+							"mimir-template": "{{ define \"mimir\" }}Mimir{{ end }}",
+						},
+					},
+				},
+			},
+			expectedTemplates: 2,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := tc.config.GetMergedTemplateDefinitions()
+			require.Len(t, result, tc.expectedTemplates)
+
+			templateMap := make(map[string]string)
+			kindMap := make(map[string]alertingTemplates.Kind)
+			for _, tmpl := range result {
+				templateMap[tmpl.Name] = tmpl.Template
+				kindMap[tmpl.Name] = tmpl.Kind
+			}
+
+			for name, content := range tc.config.TemplateFiles {
+				require.Equal(t, content, templateMap[name])
+				require.Equal(t, alertingTemplates.GrafanaKind, kindMap[name])
+			}
+
+			if len(tc.config.ExtraConfigs) > 0 {
+				for name, content := range tc.config.ExtraConfigs[0].TemplateFiles {
+					require.Equal(t, content, templateMap[name])
+					require.Equal(t, alertingTemplates.MimirKind, kindMap[name])
+				}
+			}
+		})
+	}
 }

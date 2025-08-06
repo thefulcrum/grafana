@@ -1,19 +1,18 @@
+<<<<<<< HEAD
 import React from 'react';
 import { css } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
 import { useStyles2, TabsBar, TabContent, Tab, Icon, Alert } from '@grafana/ui';
+=======
+import { useParams } from 'react-router-dom-v5-compat';
 
-import { AppNotificationSeverity } from 'app/types';
-import { InstallControls } from '../components/InstallControls';
-import { usePluginDetails } from '../hooks/usePluginDetails';
-import { Page as PluginPage } from '../components/Page';
-import { Loader } from '../components/Loader';
-import { Page } from 'app/core/components/Page/Page';
-import { PluginLogo } from '../components/PluginLogo';
-import { GrafanaRouteComponentProps } from 'app/core/navigation/types';
-import { ActionTypes } from '../types';
-import { PluginDetailsBody } from '../components/PluginDetailsBody';
+import { PluginDetailsPage } from '../components/PluginDetailsPage';
+>>>>>>> v12.1.0
 
+export default function PluginDetails(): JSX.Element {
+  const { pluginId = '' } = useParams<{ pluginId: string }>();
+
+<<<<<<< HEAD
 type PluginDetailsProps = GrafanaRouteComponentProps<{ pluginId?: string }>;
 
 export default function PluginDetails({ match }: PluginDetailsProps): JSX.Element | null {
@@ -187,3 +186,7 @@ export const getStyles = (theme: GrafanaTheme2) => {
     `,
   };
 };
+=======
+  return <PluginDetailsPage pluginId={pluginId} />;
+}
+>>>>>>> v12.1.0

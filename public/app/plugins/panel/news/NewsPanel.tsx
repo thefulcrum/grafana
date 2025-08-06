@@ -1,82 +1,40 @@
-// Libraries
-import React, { PureComponent } from 'react';
+import { useEffect } from 'react';
 
-// Utils & Services
-import { CustomScrollbar, stylesFactory } from '@grafana/ui';
+import { PanelProps } from '@grafana/data';
+import { Trans, t } from '@grafana/i18n';
+import { RefreshEvent } from '@grafana/runtime';
+import { Alert, ScrollContainer, TextLink } from '@grafana/ui';
 
-import config from 'app/core/config';
-import { feedToDataFrame } from './utils';
-import { loadRSSFeed } from './rss';
+import { News } from './component/News';
+import { DEFAULT_FEED_URL } from './constants';
+import { Options } from './panelcfg.gen';
+import { useNewsFeed } from './useNewsFeed';
 
-// Types
-import { PanelProps, DataFrameView, dateTimeFormat, GrafanaTheme2, textUtil } from '@grafana/data';
-import { NewsItem } from './types';
-import { PanelOptions } from './models.gen';
-import { DEFAULT_FEED_URL, PROXY_PREFIX } from './constants';
-import { css, cx } from '@emotion/css';
+interface NewsPanelProps extends PanelProps<Options> {}
 
-interface Props extends PanelProps<PanelOptions> {}
+export function NewsPanel(props: NewsPanelProps) {
+  const {
+    width,
+    options: { feedUrl = DEFAULT_FEED_URL, showImage },
+  } = props;
 
-interface State {
-  news?: DataFrameView<NewsItem>;
-  isError?: boolean;
-}
+  const { state, getNews } = useNewsFeed(feedUrl);
 
-export class NewsPanel extends PureComponent<Props, State> {
-  constructor(props: Props) {
-    super(props);
+  useEffect(() => {
+    const sub = props.eventBus.subscribe(RefreshEvent, getNews);
 
-    this.state = {};
-  }
+    return () => {
+      sub.unsubscribe();
+    };
+  }, [getNews, props.eventBus]);
 
-  componentDidMount(): void {
-    this.loadChannel();
-  }
+  useEffect(() => {
+    getNews();
+  }, [getNews]);
 
-  componentDidUpdate(prevProps: Props): void {
-    if (this.props.options.feedUrl !== prevProps.options.feedUrl) {
-      this.loadChannel();
-    }
-  }
-
-  async loadChannel() {
-    const { options } = this.props;
-    try {
-      const url = options.feedUrl
-        ? options.useProxy
-          ? `${PROXY_PREFIX}${options.feedUrl}`
-          : options.feedUrl
-        : DEFAULT_FEED_URL;
-      const res = await loadRSSFeed(url);
-      const frame = feedToDataFrame(res);
-      this.setState({
-        news: new DataFrameView<NewsItem>(frame),
-        isError: false,
-      });
-    } catch (err) {
-      console.error('Error Loading News', err);
-      this.setState({
-        news: undefined,
-        isError: true,
-      });
-    }
-  }
-
-  render() {
-    const { width } = this.props;
-    const { showImage } = this.props.options;
-    const { isError, news } = this.state;
-    const styles = getStyles(config.theme2);
-    const useWideLayout = width > 600;
-
-    if (isError) {
-      return <div>Error Loading News</div>;
-    }
-    if (!news) {
-      return <div>loading...</div>;
-    }
-
+  if (state.error) {
     return (
+<<<<<<< HEAD
       <CustomScrollbar autoHeightMin="100%" autoHeightMax="100%">
         {news.map((item, index) => {
           return (
@@ -111,9 +69,39 @@ export class NewsPanel extends PureComponent<Props, State> {
           );
         })}
       </CustomScrollbar>
+=======
+      <Alert title={t('news.news-panel.title-error-loading-rss-feed', 'Error loading RSS feed')}>
+        <Trans i18nKey="news.news-panel.body-error-loading-rss-feed">
+          Make sure that the feed URL is correct and that CORS is configured correctly on the server. See{' '}
+          <TextLink href="https://grafana.com/docs/grafana/latest/panels-visualizations/visualizations/news/" external>
+            News panel documentation.
+          </TextLink>
+        </Trans>
+      </Alert>
+>>>>>>> v12.1.0
     );
   }
+  if (state.loading) {
+    return (
+      <div>
+        <Trans i18nKey="news.news-panel.loading">Loading...</Trans>
+      </div>
+    );
+  }
+
+  if (!state.value) {
+    return null;
+  }
+
+  return (
+    <ScrollContainer minHeight="100%">
+      {state.value.map((_, index) => {
+        return <News key={index} index={index} width={width} showImage={showImage} data={state.value} />;
+      })}
+    </ScrollContainer>
+  );
 }
+<<<<<<< HEAD
 
 const getStyles = stylesFactory((theme: GrafanaTheme2) => ({
   container: css`
@@ -178,3 +166,5 @@ const getStyles = stylesFactory((theme: GrafanaTheme2) => ({
     color: ${theme.colors.text.secondary};
   `,
 }));
+=======
+>>>>>>> v12.1.0

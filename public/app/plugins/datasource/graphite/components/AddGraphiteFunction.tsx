@@ -1,18 +1,34 @@
+<<<<<<< HEAD
 import React, { useEffect, useMemo, useState } from 'react';
+=======
+import { css, cx } from '@emotion/css';
+import { useEffect, useMemo, useState } from 'react';
+
+import { GrafanaTheme2, SelectableValue } from '@grafana/data';
+>>>>>>> v12.1.0
 import { Button, Segment, useStyles2 } from '@grafana/ui';
+
 import { FuncDefs } from '../gfunc';
 import { actions } from '../state/actions';
+<<<<<<< HEAD
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { css, cx } from '@emotion/css';
+=======
+import { useDispatch } from '../state/context';
+
+>>>>>>> v12.1.0
 import { mapFuncDefsToSelectables } from './helpers';
-import { Dispatch } from 'redux';
 
 type Props = {
-  dispatch: Dispatch;
   funcDefs: FuncDefs;
 };
 
+<<<<<<< HEAD
 export function AddGraphiteFunction({ dispatch, funcDefs }: Props) {
+=======
+export function AddGraphiteFunction({ funcDefs }: Props) {
+  const dispatch = useDispatch();
+>>>>>>> v12.1.0
   const [value, setValue] = useState<SelectableValue<string> | undefined>(undefined);
   const styles = useStyles2(getStyles);
 
@@ -32,19 +48,32 @@ export function AddGraphiteFunction({ dispatch, funcDefs }: Props) {
   }, [value, dispatch]);
 
   return (
+<<<<<<< HEAD
     <Segment
       Component={<Button icon="plus" variant="secondary" className={cx(styles.button)} />}
       options={options}
       onChange={setValue}
       inputMinWidth={150}
     ></Segment>
+=======
+    <div>
+      <Segment
+        Component={
+          <Button icon="plus" variant="secondary" className={cx(styles.button)} aria-label="Add new function" />
+        }
+        options={options}
+        onChange={setValue}
+        inputMinWidth={150}
+      />
+    </div>
+>>>>>>> v12.1.0
   );
 }
 
 function getStyles(theme: GrafanaTheme2) {
   return {
-    button: css`
-      margin-right: ${theme.spacing(0.5)};
-    `,
+    button: css({
+      marginRight: theme.spacing(0.5),
+    }),
   };
 }

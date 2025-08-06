@@ -1,9 +1,15 @@
 import { omit } from 'lodash';
+
 import { FieldConfigSource, PanelPlugin } from '@grafana/data';
-import { PanelModel } from '../../state/PanelModel';
-import { DisplayMode } from './types';
 import { GRID_CELL_HEIGHT, GRID_CELL_VMARGIN, GRID_COLUMN_COUNT } from 'app/core/constants';
 
+<<<<<<< HEAD
+=======
+import { PanelModel } from '../../state/PanelModel';
+
+import { DisplayMode } from './types';
+
+>>>>>>> v12.1.0
 export function calculatePanelSize(mode: DisplayMode, width: number, height: number, panel: PanelModel) {
   if (mode === DisplayMode.Fill) {
     return { width, height };
@@ -36,7 +42,7 @@ export function supportsDataQuery(plugin: PanelPlugin | undefined | null): boole
 export const updateDefaultFieldConfigValue = (
   config: FieldConfigSource,
   name: string,
-  value: any,
+  value: unknown,
   isCustom?: boolean
 ) => {
   let defaults = { ...config.defaults };
@@ -68,6 +74,22 @@ export function setOptionImmutably<T extends object>(options: T, path: string | 
   const splat = !Array.isArray(path) ? path.split('.') : path;
 
   const key = splat.shift()!;
+  if (key.endsWith(']')) {
+    const idx = key.lastIndexOf('[');
+    const index = +key.substring(idx + 1, key.length - 1);
+    const propKey = key.substring(0, idx);
+    let current = (options as Record<string, any>)[propKey];
+    const arr = Array.isArray(current) ? [...current] : [];
+    if (splat.length) {
+      current = arr[index];
+      if (current == null || typeof current !== 'object') {
+        current = {};
+      }
+      value = setOptionImmutably(current, splat, value);
+    }
+    arr[index] = value;
+    return { ...options, [propKey]: arr };
+  }
 
   if (!splat.length) {
     return { ...options, [key]: value };

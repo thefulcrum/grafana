@@ -1,10 +1,19 @@
+import { MappingType, SpecialValueMatch, ValueMapping } from '../types/valueMapping';
+
 import { getValueMappingResult, isNumeric } from './valueMappings';
-import { ValueMapping, MappingType, SpecialValueMatch } from '../types';
 
 const testSet1: ValueMapping[] = [
   {
     type: MappingType.ValueToText,
     options: { '11': { text: 'elva' } },
+  },
+  {
+    type: MappingType.ValueToText,
+    options: { Infinity: { text: 'wow infinity!' } },
+  },
+  {
+    type: MappingType.ValueToText,
+    options: { '-Infinity': { text: 'wow negative infinity!' } },
   },
   {
     type: MappingType.RangeToText,
@@ -52,6 +61,40 @@ const testSet1: ValueMapping[] = [
   },
 ];
 
+const testSet2: ValueMapping[] = [
+  {
+    type: MappingType.RegexToText,
+    options: {
+      pattern: '^([^.]*).foo.com$',
+      result: { text: 'Hostname $1' },
+    },
+  },
+  {
+    type: MappingType.RegexToText,
+    options: {
+      pattern: '^([^.]*).bar.com$',
+      result: { text: 'Hostname $1' },
+    },
+  },
+  {
+    type: MappingType.RegexToText,
+    options: {
+      pattern: '/hello/',
+      result: { color: 'red' },
+    },
+  },
+];
+
+const testSet3: ValueMapping[] = [
+  {
+    type: MappingType.RegexToText,
+    options: {
+      pattern: '/.*/s',
+      result: { text: 'WOW IT REPLACED EVERYTHING OVER MULTIPLE LINES' },
+    },
+  },
+];
+
 describe('Format value with value mappings', () => {
   it('should return null with no valuemappings', () => {
     const valueMappings: ValueMapping[] = [];
@@ -70,6 +113,16 @@ describe('Format value with value mappings', () => {
     expect(getValueMappingResult(testSet1, value)).toEqual({ text: 'elva' });
   });
 
+  it('should return match result for Infinity', () => {
+    const value = Infinity;
+    expect(getValueMappingResult(testSet1, value)).toEqual({ text: 'wow infinity!' });
+  });
+
+  it('should return match result for -Infinity', () => {
+    const value = -Infinity;
+    expect(getValueMappingResult(testSet1, value)).toEqual({ text: 'wow negative infinity!' });
+  });
+
   it('should return match result with number value', () => {
     const value = 11;
     expect(getValueMappingResult(testSet1, value)).toEqual({ text: 'elva' });
@@ -82,12 +135,12 @@ describe('Format value with value mappings', () => {
 
   it('should return match result for undefined value', () => {
     const value = undefined;
-    expect(getValueMappingResult(testSet1, value as any)).toEqual({ text: 'it is null' });
+    expect(getValueMappingResult(testSet1, value)).toEqual({ text: 'it is null' });
   });
 
   it('should return match result for nan value', () => {
     const value = Number.NaN;
-    expect(getValueMappingResult(testSet1, value as any)).toEqual({ text: 'it is nan' });
+    expect(getValueMappingResult(testSet1, value)).toEqual({ text: 'it is nan' });
   });
 
   it('should return range mapping that matches first', () => {
@@ -132,6 +185,67 @@ describe('Format value with value mappings', () => {
   });
 });
 
+describe('Range mapping with null From or null To', () => {
+  expect(
+    getValueMappingResult(
+      [
+        {
+          type: MappingType.RangeToText,
+          options: {
+            from: 0,
+            to: null,
+            result: { text: 'pos' },
+          },
+        },
+      ],
+      100
+    )
+  ).toEqual({ text: 'pos' });
+
+  expect(
+    getValueMappingResult(
+      [
+        {
+          type: MappingType.RangeToText,
+          options: {
+            from: null,
+            to: 0,
+            result: { text: 'neg' },
+          },
+        },
+      ],
+      -100
+    )
+  ).toEqual({ text: 'neg' });
+});
+
+describe('Format value with regex mappings', () => {
+  it('should return correct regular expression result', () => {
+    const value = 'www.foo.com';
+    expect(getValueMappingResult(testSet2, value)).toEqual({ text: 'Hostname www' });
+  });
+
+  it('should return correct regular expression result on second regex', () => {
+    const value = 'ftp.bar.com';
+    expect(getValueMappingResult(testSet2, value)).toEqual({ text: 'Hostname ftp' });
+  });
+
+  it('should return null with unmatched value', () => {
+    const value = 'www.baz.com';
+    expect(getValueMappingResult(testSet2, value)).toBeNull();
+  });
+
+  it('should not replace match when replace text is null', () => {
+    expect(getValueMappingResult(testSet2, 'hello my name is')).toEqual({ color: 'red' });
+  });
+
+  it('supports replacing over multiple lines', () => {
+    expect(getValueMappingResult(testSet3, 'hello \n my name is')).toEqual({
+      text: 'WOW IT REPLACED EVERYTHING OVER MULTIPLE LINES',
+    });
+  });
+});
+
 describe('isNumeric', () => {
   it.each`
     value         | expected
@@ -165,5 +279,97 @@ describe('isNumeric', () => {
     ${[]}         | ${false}
   `('detects numeric values', ({ value, expected }) => {
     expect(isNumeric(value)).toEqual(expected);
+  });
+});
+
+describe('null and NaN special mapping', () => {
+  it('should return null for NaN', () => {
+    const value = Number.NaN;
+    expect(
+      getValueMappingResult(
+        [
+          {
+            type: MappingType.SpecialValue,
+            options: {
+              match: SpecialValueMatch.NullAndNaN,
+              result: { text: 'it is null or nan' },
+            },
+          },
+        ],
+        value
+      )
+    ).toEqual({ text: 'it is null or nan' });
+  });
+
+  it('should return null for null', () => {
+    const value = null;
+    expect(
+      getValueMappingResult(
+        [
+          {
+            type: MappingType.SpecialValue,
+            options: {
+              match: SpecialValueMatch.NullAndNaN,
+              result: { text: 'it is null or nan' },
+            },
+          },
+        ],
+        value
+      )
+    ).toEqual({ text: 'it is null or nan' });
+  });
+
+  it('should return null for undefined', () => {
+    const value = undefined;
+    expect(
+      getValueMappingResult(
+        [
+          {
+            type: MappingType.SpecialValue,
+            options: {
+              match: SpecialValueMatch.NullAndNaN,
+              result: { text: 'it is null or nan' },
+            },
+          },
+        ],
+        value
+      )
+    ).toEqual({ text: 'it is null or nan' });
+  });
+
+  it('should return null for numeric non-NaN', () => {
+    const value = 42;
+    expect(
+      getValueMappingResult(
+        [
+          {
+            type: MappingType.SpecialValue,
+            options: {
+              match: SpecialValueMatch.NullAndNaN,
+              result: { text: 'it is null or nan' },
+            },
+          },
+        ],
+        value
+      )
+    ).toBeNull();
+  });
+
+  it('should return null for string', () => {
+    const value = 'foo';
+    expect(
+      getValueMappingResult(
+        [
+          {
+            type: MappingType.SpecialValue,
+            options: {
+              match: SpecialValueMatch.NullAndNaN,
+              result: { text: 'it is null or nan' },
+            },
+          },
+        ],
+        value
+      )
+    ).toBeNull();
   });
 });

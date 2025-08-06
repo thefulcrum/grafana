@@ -1,8 +1,5 @@
 import { chain } from 'lodash';
-import { getTimeSrv } from 'app/features/dashboard/services/TimeSrv';
-import { getTemplateSrv } from '@grafana/runtime';
-import coreModule from 'app/core/core_module';
-import { getConfig } from 'app/core/config';
+
 import {
   DataFrame,
   DataLink,
@@ -15,7 +12,6 @@ import {
   KeyValue,
   LinkModel,
   locationUtil,
-  PanelPlugin,
   ScopedVars,
   textUtil,
   urlUtil,
@@ -23,7 +19,10 @@ import {
   VariableSuggestion,
   VariableSuggestionsScope,
 } from '@grafana/data';
-import { getVariablesUrlParams } from '../../variables/getAllVariableValuesForUrl';
+import { t } from '@grafana/i18n';
+import { getTemplateSrv } from '@grafana/runtime';
+import { DashboardLink, VariableFormatID } from '@grafana/schema';
+import { getConfig } from 'app/core/config';
 
 const timeRangeVars = [
   {
@@ -84,13 +83,13 @@ export const getPanelLinksVariableSuggestions = (): VariableSuggestion[] => [
   ...getTemplateSrv()
     .getVariables()
     .map((variable) => ({
-      value: variable.name as string,
+      value: variable.name,
       label: variable.name,
       origin: VariableOrigin.Template,
     })),
   {
     value: `${DataLinkBuiltInVars.includeVars}`,
-    label: 'All variables',
+    label: t('panel.get-panel-links-variable-suggestions.label.all-variables', 'All variables'),
     documentation: 'Adds current variables',
     origin: VariableOrigin.Template,
   },
@@ -114,7 +113,7 @@ const getFieldVars = (dataFrames: DataFrame[]) => {
   return [
     {
       value: `${DataLinkBuiltInVars.fieldName}`,
-      label: 'Name',
+      label: t('panel.get-field-vars.label.name', 'Name'),
       documentation: 'Field name of the clicked datapoint (in ms epoch)',
       origin: VariableOrigin.Field,
     },
@@ -208,7 +207,7 @@ export const getDataLinksVariableSuggestions = (
 ): VariableSuggestion[] => {
   const valueTimeVar = {
     value: `${DataLinkBuiltInVars.valueTime}`,
-    label: 'Time',
+    label: t('panel.get-data-links-variable-suggestions.value-time-var.label.time', 'Time'),
     documentation: 'Time value of the clicked datapoint (in ms epoch)',
     origin: VariableOrigin.Value,
   };
@@ -235,64 +234,51 @@ export const getCalculationValueDataLinksVariableSuggestions = (dataFrames: Data
   const fieldVars = getFieldVars(dataFrames);
   const valueCalcVar = {
     value: `${DataLinkBuiltInVars.valueCalc}`,
-    label: 'Calculation name',
+    label: t(
+      'panel.get-calculation-value-data-links-variable-suggestions.value-calc-var.label.calculation-name',
+      'Calculation name'
+    ),
     documentation: 'Name of the calculation the value is a result of',
     origin: VariableOrigin.Value,
   };
   return [...seriesVars, ...fieldVars, ...valueVars, valueCalcVar, ...getPanelLinksVariableSuggestions()];
 };
 
-export const getPanelOptionsVariableSuggestions = (plugin: PanelPlugin, data?: DataFrame[]): VariableSuggestion[] => {
-  const dataVariables = plugin.meta.skipDataQuery ? [] : getDataFrameVars(data || []);
-  return [
-    ...dataVariables, // field values
-    ...getTemplateSrv()
-      .getVariables()
-      .map((variable) => ({
-        value: variable.name as string,
-        label: variable.name,
-        origin: VariableOrigin.Template,
-      })),
-  ];
-};
-
 export interface LinkService {
   getDataLinkUIModel: <T>(link: DataLink, replaceVariables: InterpolateFunction | undefined, origin: T) => LinkModel<T>;
-  getAnchorInfo: (link: any) => any;
-  getLinkUrl: (link: any) => string;
+  getAnchorInfo: (link: DashboardLink) => {
+    href: string;
+    title: string;
+    tooltip: string;
+  };
+  getLinkUrl: (link: DashboardLink) => string;
 }
 
 export class LinkSrv implements LinkService {
-  constructor() {}
-
-  getLinkUrl(link: any) {
-    let url = locationUtil.assureBaseUrl(getTemplateSrv().replace(link.url || ''));
-    let params: { [key: string]: any } = {};
+  getLinkUrl(link: DashboardLink) {
+    let url = link.url ?? '';
 
     if (link.keepTime) {
-      const range = getTimeSrv().timeRangeForUrl();
-      params['from'] = range.from;
-      params['to'] = range.to;
+      url = urlUtil.appendQueryToUrl(url, `\$${DataLinkBuiltInVars.keepTime}`);
     }
 
     if (link.includeVars) {
-      params = {
-        ...params,
-        ...getVariablesUrlParams(),
-      };
+      url = urlUtil.appendQueryToUrl(url, `\$${DataLinkBuiltInVars.includeVars}`);
     }
 
-    url = urlUtil.appendQueryToUrl(url, urlUtil.toUrlParams(params));
+    url = getTemplateSrv().replace(url);
+    url = locationUtil.assureBaseUrl(url);
+
     return getConfig().disableSanitizeHtml ? url : textUtil.sanitizeUrl(url);
   }
 
-  getAnchorInfo(link: any) {
+  getAnchorInfo(link: DashboardLink) {
     const templateSrv = getTemplateSrv();
-    const info: any = {};
-    info.href = this.getLinkUrl(link);
-    info.title = templateSrv.replace(link.title || '');
-    info.tooltip = templateSrv.replace(link.tooltip || '');
-    return info;
+    return {
+      href: this.getLinkUrl(link),
+      title: templateSrv.replace(link.title || ''),
+      tooltip: templateSrv.replace(link.tooltip || ''),
+    };
   }
 
   /**
@@ -315,12 +301,12 @@ export class LinkSrv implements LinkService {
     const info: LinkModel<T> = {
       href: locationUtil.assureBaseUrl(href.replace(/\n/g, '')),
       title: link.title ?? '',
-      target: link.targetBlank ? '_blank' : undefined,
+      target: link.targetBlank !== undefined ? (link.targetBlank ? '_blank' : '_self') : undefined,
       origin,
     };
 
     if (replaceVariables) {
-      info.href = replaceVariables(info.href);
+      info.href = replaceVariables(info.href, undefined, VariableFormatID.UriEncode);
       info.title = replaceVariables(link.title);
     }
 
@@ -353,14 +339,15 @@ export class LinkSrv implements LinkService {
   }
 }
 
-let singleton: LinkService;
+let singleton: LinkService | undefined;
 
 export function setLinkSrv(srv: LinkService) {
   singleton = srv;
 }
 
 export function getLinkSrv(): LinkService {
+  if (!singleton) {
+    singleton = new LinkSrv();
+  }
   return singleton;
 }
-
-coreModule.service('linkSrv', LinkSrv);

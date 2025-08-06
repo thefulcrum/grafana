@@ -1,18 +1,17 @@
-import { AppEvents, locationUtil } from '@grafana/data';
-import { getBackendSrv, locationService } from '@grafana/runtime';
-import { backendSrv } from 'app/core/services/backend_srv';
-import { FolderState, ThunkResult } from 'app/types';
-import { DashboardAcl, DashboardAclUpdateDTO, NewDashboardAclItem, PermissionLevel } from 'app/types/acl';
 import { updateNavIndex } from 'app/core/actions';
-import { buildNavModel } from './navModel';
-import appEvents from 'app/core/app_events';
-import { loadFolder, loadFolderPermissions } from './reducers';
+import { backendSrv } from 'app/core/services/backend_srv';
+import { FolderDTO } from 'app/types/folders';
+import { ThunkResult } from 'app/types/store';
 
-export function getFolderByUid(uid: string): ThunkResult<void> {
+import { buildNavModel } from './navModel';
+import { loadFolder } from './reducers';
+
+export function getFolderByUid(uid: string): ThunkResult<Promise<FolderDTO>> {
   return async (dispatch) => {
     const folder = await backendSrv.getFolderByUid(uid);
     dispatch(loadFolder(folder));
     dispatch(updateNavIndex(buildNavModel(folder)));
+<<<<<<< HEAD
   };
 }
 
@@ -123,5 +122,8 @@ export function createNewFolder(folderName: string): ThunkResult<void> {
     const newFolder = await getBackendSrv().post('/api/folders', { title: folderName });
     appEvents.emit(AppEvents.alertSuccess, ['Folder Created', 'OK']);
     locationService.push(locationUtil.stripBaseFromUrl(newFolder.url));
+=======
+    return folder;
+>>>>>>> v12.1.0
   };
 }

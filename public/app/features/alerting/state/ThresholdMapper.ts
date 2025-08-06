@@ -1,10 +1,18 @@
 import { config } from 'app/core/config';
+<<<<<<< HEAD
 import { PanelModel } from 'app/features/dashboard/state';
+=======
+import { PanelModel } from 'app/features/dashboard/state/PanelModel';
+>>>>>>> v12.1.0
 
 export const hiddenReducerTypes = ['percent_diff', 'percent_diff_abs'];
 export class ThresholdMapper {
   static alertToGraphThresholds(panel: PanelModel) {
+<<<<<<< HEAD
     if (!panel.alert || config.featureToggles.ngalert) {
+=======
+    if (!panel.alert || config.unifiedAlertingEnabled) {
+>>>>>>> v12.1.0
       return false; // no update when no alerts
     }
 
@@ -27,6 +35,26 @@ export class ThresholdMapper {
         case 'lt': {
           const value = evaluator.params[0];
           thresholds.push({ value: value, op: 'lt', visible });
+          break;
+        }
+        case 'eq': {
+          const value = evaluator.params[0];
+          thresholds.push({ value: value, op: 'eq', visible });
+          break;
+        }
+        case 'ne': {
+          const value = evaluator.params[0];
+          thresholds.push({ value: value, op: 'ne', visible });
+          break;
+        }
+        case 'gte': {
+          const value = evaluator.params[0];
+          thresholds.push({ value: value, op: 'ge', visible });
+          break;
+        }
+        case 'lte': {
+          const value = evaluator.params[0];
+          thresholds.push({ value: value, op: 'le', visible });
           break;
         }
         case 'outside_range': {
@@ -53,6 +81,33 @@ export class ThresholdMapper {
           } else {
             thresholds.push({ value: value1, op: 'gt', visible });
             thresholds.push({ value: value2, op: 'lt', visible });
+          }
+          break;
+        }
+        case 'outside_range_included': {
+          const value1 = evaluator.params[0];
+          const value2 = evaluator.params[1];
+
+          if (value1 >= value2) {
+            thresholds.push({ value: value1, op: 'ge', visible });
+            thresholds.push({ value: value2, op: 'le', visible });
+          } else {
+            thresholds.push({ value: value1, op: 'le', visible });
+            thresholds.push({ value: value2, op: 'ge', visible });
+          }
+
+          break;
+        }
+        case 'within_range_included': {
+          const value1 = evaluator.params[0];
+          const value2 = evaluator.params[1];
+
+          if (value1 >= value2) {
+            thresholds.push({ value: value1, op: 'le', visible });
+            thresholds.push({ value: value2, op: 'ge', visible });
+          } else {
+            thresholds.push({ value: value1, op: 'ge', visible });
+            thresholds.push({ value: value2, op: 'le', visible });
           }
           break;
         }

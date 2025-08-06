@@ -1,54 +1,117 @@
 import { css } from '@emotion/css';
+import { useState } from 'react';
+
 import { QueryEditorProps } from '@grafana/data';
-import { selectors } from '@grafana/e2e-selectors';
-import { InlineField, InlineFieldRow, Input, RadioButtonGroup } from '@grafana/ui';
-import React from 'react';
+import {
+  Button,
+  FileDropzone,
+  InlineField,
+  InlineFieldRow,
+  Stack,
+  Modal,
+  QueryField,
+  RadioButtonGroup,
+  useStyles2,
+  useTheme2,
+} from '@grafana/ui';
+
 import { JaegerDatasource } from '../datasource';
 import { JaegerQuery, JaegerQueryType } from '../types';
+
 import { SearchForm } from './SearchForm';
 
 type Props = QueryEditorProps<JaegerDatasource, JaegerQuery>;
 
-export function QueryEditor({ datasource, query, onChange }: Props) {
+export function QueryEditor({ datasource, query, onChange, onRunQuery }: Props) {
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const theme = useTheme2();
+  const styles = useStyles2(getStyles);
+
+  const onChangeQuery = (value: string) => {
+    const nextQuery: JaegerQuery = { ...query, query: value };
+    onChange(nextQuery);
+  };
+
+  const renderEditorBody = () => {
+    switch (query.queryType) {
+      case 'search':
+        return <SearchForm datasource={datasource} query={query} onChange={onChange} />;
+      case 'dependencyGraph':
+        return null;
+      default:
+        return (
+          <InlineFieldRow>
+            <InlineField label="Trace ID" labelWidth={14} grow>
+              <QueryField
+                query={query.query}
+                onChange={onChangeQuery}
+                onRunQuery={onRunQuery}
+                placeholder={'Enter a Trace ID (run with Shift+Enter)'}
+                portalOrigin="jaeger"
+              />
+            </InlineField>
+          </InlineFieldRow>
+        );
+    }
+  };
+
   return (
-    <div className={css({ width: '50%' })}>
-      <InlineFieldRow>
-        <InlineField label="Query type">
-          <RadioButtonGroup<JaegerQueryType>
-            options={[
-              { value: 'search', label: 'Search' },
-              { value: undefined, label: 'TraceID' },
-            ]}
-            value={query.queryType}
-            onChange={(v) =>
+    <>
+      <Modal title={'Upload trace'} isOpen={uploadModalOpen} onDismiss={() => setUploadModalOpen(false)}>
+        <div className={css({ padding: theme.spacing(2) })}>
+          <FileDropzone
+            options={{ multiple: false }}
+            onLoad={(result) => {
+              datasource.uploadedJson = result;
               onChange({
                 ...query,
-                queryType: v,
-              })
-            }
-            size="md"
+                queryType: 'upload',
+              });
+              setUploadModalOpen(false);
+              onRunQuery();
+            }}
           />
-        </InlineField>
-      </InlineFieldRow>
-      {query.queryType === 'search' ? (
-        <SearchForm datasource={datasource} query={query} onChange={onChange} />
-      ) : (
+        </div>
+      </Modal>
+      <div className={styles.container}>
         <InlineFieldRow>
-          <InlineField label="Trace ID" labelWidth={21} grow>
-            <Input
-              aria-label={selectors.components.DataSource.Jaeger.traceIDInput}
-              placeholder="Eg. 4050b8060d659e52"
-              value={query.query || ''}
-              onChange={(v) =>
-                onChange({
-                  ...query,
-                  query: v.currentTarget.value,
-                })
-              }
-            />
+          <InlineField label="Query type" grow={true}>
+            <Stack gap={1} alignItems="center" justifyContent="space-between">
+              <RadioButtonGroup<JaegerQueryType>
+                options={[
+                  { value: 'search', label: 'Search' },
+                  { value: undefined, label: 'TraceID' },
+                  { value: 'dependencyGraph', label: 'Dependency graph' },
+                ]}
+                value={query.queryType}
+                onChange={(v) =>
+                  onChange({
+                    ...query,
+                    queryType: v,
+                  })
+                }
+                size="md"
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setUploadModalOpen(true);
+                }}
+              >
+                Import trace
+              </Button>
+            </Stack>
           </InlineField>
         </InlineFieldRow>
-      )}
-    </div>
+        {renderEditorBody()}
+      </div>
+    </>
   );
 }
+
+const getStyles = () => ({
+  container: css({
+    width: '100%',
+  }),
+});

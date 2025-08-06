@@ -1,24 +1,41 @@
 import { PanelPlugin } from '@grafana/data';
-import { DrawStyle, GraphFieldConfig, commonOptionsBuilder } from '@grafana/ui';
-import { XYChartPanel } from './XYChartPanel';
-import { Options } from './types';
-import { XYDimsEditor } from './XYDimsEditor';
-import { getGraphFieldConfig, defaultGraphConfig } from '../timeseries/config';
+import { t } from '@grafana/i18n';
+import { commonOptionsBuilder } from '@grafana/ui';
 
-export const plugin = new PanelPlugin<Options, GraphFieldConfig>(XYChartPanel)
-  .useFieldConfig(
-    getGraphFieldConfig({
-      ...defaultGraphConfig,
-      drawStyle: DrawStyle.Points,
-    })
-  )
+import { SeriesEditor } from './SeriesEditor';
+import { XYChartPanel2 } from './XYChartPanel';
+import { getScatterFieldConfig } from './config';
+import { xyChartMigrationHandler } from './migrations';
+import { FieldConfig, defaultFieldConfig, Options } from './panelcfg.gen';
+
+export const plugin = new PanelPlugin<Options, FieldConfig>(XYChartPanel2)
+  // .setPanelChangeHandler(xyChartChangeHandler)
+  .setMigrationHandler(xyChartMigrationHandler)
+  .useFieldConfig(getScatterFieldConfig(defaultFieldConfig))
   .setPanelOptions((builder) => {
-    builder.addCustomEditor({
-      id: 'xyPlotConfig',
-      path: 'dims',
-      name: 'Data',
-      editor: XYDimsEditor,
-    });
-    commonOptionsBuilder.addTooltipOptions(builder);
+    const category = [t('xychart.category-xychart', 'XY Chart')];
+    builder
+      .addRadio({
+        path: 'mapping',
+        name: t('xychart.name-series-mapping', 'Series mapping'),
+        category,
+        defaultValue: 'auto',
+        settings: {
+          options: [
+            { value: 'auto', label: t('xychart.series-mapping-options.label-auto', 'Auto') },
+            { value: 'manual', label: t('xychart.series-mapping-options.label-manual', 'Manual') },
+          ],
+        },
+      })
+      .addCustomEditor({
+        id: 'series',
+        path: 'series',
+        name: '',
+        category,
+        editor: SeriesEditor,
+        defaultValue: [{}],
+      });
+
+    commonOptionsBuilder.addTooltipOptions(builder, true);
     commonOptionsBuilder.addLegendOptions(builder);
   });

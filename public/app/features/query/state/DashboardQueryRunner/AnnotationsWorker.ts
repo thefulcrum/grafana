@@ -1,9 +1,21 @@
 import { cloneDeep } from 'lodash';
 import { from, merge, Observable, of } from 'rxjs';
 import { catchError, filter, finalize, map, mergeAll, mergeMap, reduce, takeUntil } from 'rxjs/operators';
+<<<<<<< HEAD
 import { getDataSourceSrv } from '@grafana/runtime';
 import { AnnotationQuery, DataSourceApi } from '@grafana/data';
+=======
+>>>>>>> v12.1.0
 
+import { AnnotationQuery, DataSourceApi } from '@grafana/data';
+import { config, getDataSourceSrv } from '@grafana/runtime';
+import { PublicAnnotationsDataSource } from 'app/features/query/state/DashboardQueryRunner/PublicAnnotationsDataSource';
+
+import { AnnotationQueryFinished, AnnotationQueryStarted } from '../../../../types/events';
+
+import { AnnotationsQueryRunner } from './AnnotationsQueryRunner';
+import { getDashboardQueryRunner } from './DashboardQueryRunner';
+import { LegacyAnnotationQueryRunner } from './LegacyAnnotationQueryRunner';
 import {
   AnnotationQueryRunner,
   DashboardQueryRunnerOptions,
@@ -11,10 +23,13 @@ import {
   DashboardQueryRunnerWorkerResult,
 } from './types';
 import { emptyResult, handleDatasourceSrvError, translateQueryResult } from './utils';
+<<<<<<< HEAD
 import { LegacyAnnotationQueryRunner } from './LegacyAnnotationQueryRunner';
 import { AnnotationsQueryRunner } from './AnnotationsQueryRunner';
 import { AnnotationQueryFinished, AnnotationQueryStarted } from '../../../../types/events';
 import { getDashboardQueryRunner } from './DashboardQueryRunner';
+=======
+>>>>>>> v12.1.0
 
 export class AnnotationsWorker implements DashboardQueryRunnerWorker {
   constructor(
@@ -26,6 +41,7 @@ export class AnnotationsWorker implements DashboardQueryRunnerWorker {
 
   canWork({ dashboard }: DashboardQueryRunnerOptions): boolean {
     const annotations = dashboard.annotations.list.find(AnnotationsWorker.getAnnotationsToProcessFilter);
+
     return Boolean(annotations);
   }
 
@@ -35,13 +51,35 @@ export class AnnotationsWorker implements DashboardQueryRunnerWorker {
     }
 
     const { dashboard, range } = options;
-    const annotations = dashboard.annotations.list.filter(AnnotationsWorker.getAnnotationsToProcessFilter);
+    let annotations = dashboard.annotations.list.filter(AnnotationsWorker.getAnnotationsToProcessFilter);
+
+    // We only want to create a single PublicDashboardDatasource. This will get all annotations in one request.
+    if (config.publicDashboardAccessToken && annotations.length > 0) {
+      annotations = [annotations[0]];
+    }
+
     const observables = annotations.map((annotation) => {
+<<<<<<< HEAD
       const datasourceObservable = from(getDataSourceSrv().get(annotation.datasource)).pipe(
         catchError(handleDatasourceSrvError) // because of the reduce all observables need to be completed, so an erroneous observable wont do
       );
       return datasourceObservable.pipe(
         mergeMap((datasource?: DataSourceApi) => {
+=======
+      let datasourceObservable;
+
+      if (config.publicDashboardAccessToken) {
+        const pubdashDatasource = new PublicAnnotationsDataSource();
+        datasourceObservable = of(pubdashDatasource).pipe(catchError(handleDatasourceSrvError));
+      } else {
+        datasourceObservable = from(getDataSourceSrv().get(annotation.datasource)).pipe(
+          catchError(handleDatasourceSrvError) // because of the reduce all observables need to be completed, so an erroneous observable wont do
+        );
+      }
+
+      return datasourceObservable.pipe(
+        mergeMap((datasource: DataSourceApi | undefined) => {
+>>>>>>> v12.1.0
           const runner = this.runners.find((r) => r.canRun(datasource));
           if (!runner) {
             return of([]);
@@ -61,7 +99,11 @@ export class AnnotationsWorker implements DashboardQueryRunnerWorker {
                 annotation.snapshotData = cloneDeep(results);
               }
               // translate result
-              return translateQueryResult(annotation, results);
+              if (config.publicDashboardAccessToken) {
+                return results;
+              } else {
+                return translateQueryResult(annotation, results);
+              }
             }),
             finalize(() => {
               dashboard.events.publish(new AnnotationQueryFinished(annotation));

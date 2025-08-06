@@ -1,90 +1,170 @@
 import { PanelPlugin } from '@grafana/data';
-import { BaseLayerEditor } from './editor/BaseLayerEditor';
-import { DataLayersEditor } from './editor/DataLayersEditor';
-import { GeomapPanel } from './GeomapPanel';
-import { MapViewEditor } from './editor/MapViewEditor';
-import { defaultView, GeomapPanelOptions } from './types';
-import { mapPanelChangedHandler } from './migrations';
-import { defaultMarkersConfig } from './layers/data/markersLayer';
-import { DEFAULT_BASEMAP_CONFIG } from './layers/registry';
+import { t, Trans } from '@grafana/i18n';
+import { config } from '@grafana/runtime';
+import { commonOptionsBuilder } from '@grafana/ui';
 
-export const plugin = new PanelPlugin<GeomapPanelOptions>(GeomapPanel)
+import { GeomapPanel } from './GeomapPanel';
+import { LayersEditor } from './editor/LayersEditor';
+import { MapViewEditor } from './editor/MapViewEditor';
+import { getLayerEditor } from './editor/layerEditor';
+import { mapPanelChangedHandler, mapMigrationHandler } from './migrations';
+import { defaultMapViewConfig, Options, TooltipMode, GeomapInstanceState } from './types';
+
+export const plugin = new PanelPlugin<Options>(GeomapPanel)
   .setNoPadding()
   .setPanelChangeHandler(mapPanelChangedHandler)
-  .useFieldConfig()
-  .setPanelOptions((builder) => {
-    let category = ['Map View'];
+  .setMigrationHandler(mapMigrationHandler)
+  .useFieldConfig({
+    useCustomConfig: (builder) => {
+      commonOptionsBuilder.addHideFrom(builder);
+    },
+  })
+  .setPanelOptions((builder, context) => {
+    let category = [t('geomap.category-map-view', 'Map view')];
     builder.addCustomEditor({
       category,
       id: 'view',
       path: 'view',
-      name: 'Initial view', // don't show it
-      description: 'This location will show when the panel first loads',
+      name: t('geomap.name-initial-view', 'Initial view'), // don't show it
+      description: t('geomap.description-initial-view', 'This location will show when the panel first loads.'),
       editor: MapViewEditor,
-      defaultValue: defaultView,
+      defaultValue: defaultMapViewConfig,
     });
 
     builder.addBooleanSwitch({
       category,
       path: 'view.shared',
-      description: 'Use the same view across multiple panels.  Note: this may require a dashboard reload.',
-      name: 'Share view',
-      defaultValue: defaultView.shared,
+      description: t(
+        'geomap.description-share-view',
+        'Use the same view across multiple panels.  Note: this may require a dashboard reload.'
+      ),
+      name: t('geomap.name-share-view', 'Share view'),
+      defaultValue: defaultMapViewConfig.shared,
     });
 
-    builder.addCustomEditor({
-      category: ['Base Layer'],
-      id: 'basemap',
-      path: 'basemap',
-      name: 'Base Layer',
-      editor: BaseLayerEditor,
-      defaultValue: DEFAULT_BASEMAP_CONFIG,
-    });
+    // eslint-disable-next-line
+    const state = context.instanceState as GeomapInstanceState;
+    if (!state?.layers) {
+      // TODO? show spinner?
+    } else {
+      const layersCategory = [t('geomap.category-map-layers', 'Map layers')];
+      const basemapCategory = [t('geomap.category-basemap-layer', 'Basemap layer')];
+      builder.addCustomEditor({
+        category: layersCategory,
+        id: 'layers',
+        path: '',
+        name: '',
+        editor: LayersEditor,
+      });
 
-    builder.addCustomEditor({
-      category: ['Data Layer'],
-      id: 'layers',
-      path: 'layers',
-      name: 'Data Layer',
-      editor: DataLayersEditor,
-      defaultValue: [defaultMarkersConfig],
-    });
+      const selected = state.layers[state.selected];
+      if (state.selected && selected) {
+        builder.addNestedOptions(
+          getLayerEditor({
+            state: selected,
+            category: layersCategory,
+            basemaps: false,
+          })
+        );
+      }
+
+      const baselayer = state.layers[0];
+      if (config.geomapDisableCustomBaseLayer) {
+        builder.addCustomEditor({
+          category: basemapCategory,
+          id: 'layers',
+          path: '',
+          name: '',
+          // eslint-disable-next-line react/display-name
+          editor: () => (
+            <div>
+              <Trans i18nKey="geomap.plugin.basemap-layer-configured-server-admin">
+                The basemap layer is configured by the server admin.
+              </Trans>
+            </div>
+          ),
+        });
+      } else if (baselayer) {
+        builder.addNestedOptions(
+          getLayerEditor({
+            state: baselayer,
+            category: basemapCategory,
+            basemaps: true,
+          })
+        );
+      }
+    }
 
     // The controls section
-    category = ['Map Controls'];
+    category = [t('geomap.category-map-controls', 'Map controls')];
     builder
       .addBooleanSwitch({
         category,
         path: 'controls.showZoom',
-        description: 'show buttons in the upper left',
-        name: 'Show zoom control',
+        description: t('geomap.description-show-zoom', 'Show zoom control buttons in the upper left corner'),
+        name: t('geomap.name-show-zoom', 'Show zoom control'),
         defaultValue: true,
       })
       .addBooleanSwitch({
         category,
         path: 'controls.mouseWheelZoom',
+<<<<<<< HEAD
         name: 'Mouse wheel zoom',
+=======
+        description: t('geomap.description-mouse-wheel-zoom', 'Enable zoom control via mouse wheel'),
+        name: t('geomap.name-mouse-wheel-zoom', 'Mouse wheel zoom'),
+>>>>>>> v12.1.0
         defaultValue: true,
       })
       .addBooleanSwitch({
         category,
         path: 'controls.showAttribution',
-        name: 'Show attribution',
-        description: 'Show the map source attribution info in the lower right',
+        name: t('geomap.name-show-attribution', 'Show attribution'),
+        description: t(
+          'geomap.description-show-attribution',
+          'Show the map source attribution info in the lower right'
+        ),
         defaultValue: true,
       })
       .addBooleanSwitch({
         category,
         path: 'controls.showScale',
-        name: 'Show scale',
-        description: 'Indicate map scale',
+        name: t('geomap.name-show-scale', 'Show scale'),
+        description: t('geomap.description-show-scale', 'Indicate map scale'),
+        defaultValue: false,
+      })
+      .addBooleanSwitch({
+        category,
+        path: 'controls.showMeasure',
+        name: t('geomap.name-show-measure', 'Show measure tools'),
+        description: t('geomap.description-show-measure', 'Show tools for making measurements on the map'),
         defaultValue: false,
       })
       .addBooleanSwitch({
         category,
         path: 'controls.showDebug',
-        name: 'Show debug',
-        description: 'show map info',
+        name: t('geomap.name-show-debug', 'Show debug'),
+        description: t('geomap.description-show-debug', 'Show map info'),
         defaultValue: false,
+      })
+      .addRadio({
+        category,
+        path: 'tooltip.mode',
+        name: t('geomap.name-tooltip', 'Tooltip'),
+        defaultValue: TooltipMode.Details,
+        settings: {
+          options: [
+            {
+              label: t('geomap.tooltip-options.label-none', 'None'),
+              value: TooltipMode.None,
+              description: t('geomap.tooltip-options.description-none', 'Show contents on click, not hover'),
+            },
+            {
+              label: t('geomap.tooltip-options.label-details', 'Details'),
+              value: TooltipMode.Details,
+              description: t('geomap.tooltip-options.description-details', 'Show popup on hover'),
+            },
+          ],
+        },
       });
   });

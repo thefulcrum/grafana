@@ -1,4 +1,13 @@
-import React, { FC, useCallback } from 'react';
+import { css } from '@emotion/css';
+import { localPoint } from '@visx/event';
+import { RadialGradient } from '@visx/gradient';
+import { Group } from '@visx/group';
+import Pie, { PieArcDatum, ProvidedProps } from '@visx/shape/lib/shapes/Pie';
+import { useTooltip, useTooltipInPortal } from '@visx/tooltip';
+import { UseTooltipParams } from '@visx/tooltip/lib/hooks/useTooltip';
+import { useCallback } from 'react';
+import * as React from 'react';
+import tinycolor from 'tinycolor2';
 
 import {
   FieldDisplay,
@@ -8,8 +17,9 @@ import {
   DataHoverClearEvent,
   DataHoverEvent,
 } from '@grafana/data';
+import { selectors } from '@grafana/e2e-selectors';
+import { VizTooltipOptions } from '@grafana/schema';
 import {
-  VizTooltipOptions,
   useTheme2,
   useStyles2,
   SeriesTableRowProps,
@@ -17,19 +27,10 @@ import {
   SeriesTable,
   usePanelContext,
 } from '@grafana/ui';
-import { PieChartType, PieChartLabels } from './types';
-import { useTooltip, useTooltipInPortal } from '@visx/tooltip';
-import Pie, { PieArcDatum, ProvidedProps } from '@visx/shape/lib/shapes/Pie';
-import { UseTooltipParams } from '@visx/tooltip/lib/hooks/useTooltip';
-import { RadialGradient } from '@visx/gradient';
-import { localPoint } from '@visx/event';
-import { Group } from '@visx/group';
-import tinycolor from 'tinycolor2';
-import { css } from '@emotion/css';
+import { getTooltipContainerStyles, useComponentInstanceId } from '@grafana/ui/internal';
 
-import { useComponentInstanceId } from '@grafana/ui/src/utils/useComponetInstanceId';
-import { getTooltipContainerStyles } from '@grafana/ui/src/themes/mixins';
-import { selectors } from '@grafana/e2e-selectors';
+import { PieChartType, PieChartLabels } from './panelcfg.gen';
+import { filterDisplayItems, sumDisplayItemsReducer } from './utils';
 
 /**
  * @beta
@@ -45,7 +46,7 @@ interface PieChartProps {
   tooltipOptions: VizTooltipOptions;
 }
 
-export const PieChart: FC<PieChartProps> = ({
+export const PieChart = ({
   fieldDisplayValues,
   pieType,
   width,
@@ -53,7 +54,7 @@ export const PieChart: FC<PieChartProps> = ({
   highlightedTitle,
   displayLabels = [],
   tooltipOptions,
-}) => {
+}: PieChartProps) => {
   const theme = useTheme2();
   const componentInstanceId = useComponentInstanceId('PieChart');
   const styles = useStyles2(getStyles);
@@ -63,9 +64,13 @@ export const PieChart: FC<PieChartProps> = ({
     scroll: true,
   });
 
+<<<<<<< HEAD
   const filteredFieldDisplayValues = fieldDisplayValues.filter((dv) => {
     return !dv.field.custom.hideFrom.viz;
   });
+=======
+  const filteredFieldDisplayValues = fieldDisplayValues.filter(filterDisplayItems);
+>>>>>>> v12.1.0
 
   const getValue = (d: FieldDisplay) => d.display.numeric;
   const getGradientId = (color: string) => `${componentInstanceId}-${tinycolor(color).toHex()}`;
@@ -75,7 +80,7 @@ export const PieChart: FC<PieChartProps> = ({
 
   const showLabel = displayLabels.length > 0;
   const showTooltip = tooltipOptions.mode !== 'none' && tooltip.tooltipOpen;
-  const total = filteredFieldDisplayValues.reduce((acc, item) => item.display.numeric + acc, 0);
+  const total = filteredFieldDisplayValues.reduce(sumDisplayItemsReducer, 0);
   const layout = getPieLayout(width, height, pieType);
   const colors = [
     ...new Set(
@@ -85,7 +90,7 @@ export const PieChart: FC<PieChartProps> = ({
 
   return (
     <div className={styles.container}>
-      <svg width={layout.size} height={layout.size} ref={containerRef}>
+      <svg width={layout.size} height={layout.size} ref={containerRef} style={{ overflow: 'visible' }}>
         <Group top={layout.position} left={layout.position}>
           {colors.map((color) => {
             return (
@@ -119,7 +124,7 @@ export const PieChart: FC<PieChartProps> = ({
 
                   if (arc.data.hasLinks && arc.data.getLinks) {
                     return (
-                      <DataLinksContextMenu config={arc.data.field} key={arc.index} links={arc.data.getLinks}>
+                      <DataLinksContextMenu key={arc.index} links={arc.data.getLinks}>
                         {(api) => (
                           <PieSlice
                             tooltip={tooltip}
@@ -200,7 +205,7 @@ function PieSlice({ arc, pie, highlightState, openMenu, fill, tooltip, tooltipOp
   const { eventBus } = usePanelContext();
 
   const onMouseOut = useCallback(
-    (event: any) => {
+    (event: React.MouseEvent<SVGGElement>) => {
       eventBus?.publish({
         type: DataHoverClearEvent.type,
         payload: {
@@ -216,7 +221,7 @@ function PieSlice({ arc, pie, highlightState, openMenu, fill, tooltip, tooltipOp
   );
 
   const onMouseMoveOverArc = useCallback(
-    (event: any) => {
+    (event: React.MouseEvent<SVGGElement>) => {
       eventBus?.publish({
         type: DataHoverEvent.type,
         payload: {
@@ -227,12 +232,16 @@ function PieSlice({ arc, pie, highlightState, openMenu, fill, tooltip, tooltipOp
         },
       });
 
-      const coords = localPoint(event.target.ownerSVGElement, event);
-      tooltip.showTooltip({
-        tooltipLeft: coords!.x,
-        tooltipTop: coords!.y,
-        tooltipData: getTooltipData(pie, arc, tooltipOptions),
-      });
+      const owner = event.currentTarget.ownerSVGElement;
+
+      if (owner) {
+        const coords = localPoint(owner, event);
+        tooltip.showTooltip({
+          tooltipLeft: coords!.x,
+          tooltipTop: coords!.y,
+          tooltipData: getTooltipData(pie, arc, tooltipOptions),
+        });
+      }
     },
     [eventBus, arc, tooltip, pie, tooltipOptions]
   );
@@ -246,7 +255,7 @@ function PieSlice({ arc, pie, highlightState, openMenu, fill, tooltip, tooltipOp
       onMouseMove={tooltipOptions.mode !== 'none' ? onMouseMoveOverArc : undefined}
       onMouseOut={onMouseOut}
       onClick={openMenu}
-      aria-label={selectors.components.Panels.Visualization.PieChart.svgSlice}
+      data-testid={selectors.components.Panels.Visualization.PieChart.svgSlice}
     >
       <path d={pie.path({ ...arc })!} fill={fill} stroke={theme.colors.background.primary} strokeWidth={1} />
     </g>
@@ -301,7 +310,7 @@ function PieLabel({ arc, outerRadius, innerRadius, displayLabels, total, color, 
         )}
         {displayLabels.includes(PieChartLabels.Percent) && (
           <tspan x={labelX} dy="1.2em">
-            {((arc.data.display.numeric / total) * 100).toFixed(0) + '%'}
+            {((arc.data.display.numeric / total) * 100).toFixed(arc.data.field.decimals ?? 0) + '%'}
           </tspan>
         )}
       </text>
@@ -315,14 +324,23 @@ function getTooltipData(
   tooltipOptions: VizTooltipOptions
 ) {
   if (tooltipOptions.mode === 'multi') {
-    return pie.arcs.map((pieArc) => {
-      return {
-        color: pieArc.data.display.color ?? FALLBACK_COLOR,
-        label: pieArc.data.display.title,
-        value: formattedValueToString(pieArc.data.display),
-        isActive: pieArc.index === arc.index,
-      };
-    });
+    return pie.arcs
+      .filter((pa) => {
+        if (tooltipOptions.hideZeros && pa.value === 0) {
+          return false;
+        }
+
+        const customConfig = pa.data.field.custom;
+        return !customConfig?.hideFrom?.tooltip && !customConfig?.hideFrom?.viz;
+      })
+      .map((pieArc) => {
+        return {
+          color: pieArc.data.display.color ?? FALLBACK_COLOR,
+          label: pieArc.data.display.title,
+          value: formattedValueToString(pieArc.data.display),
+          isActive: pieArc.index === arc.index,
+        };
+      });
   }
   return [
     {
@@ -414,28 +432,32 @@ function getSvgStyle(
 
 const getStyles = (theme: GrafanaTheme2) => {
   return {
-    container: css`
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    `,
+    container: css({
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }),
     svgArg: {
-      normal: css`
-        transition: all 200ms ease-in-out;
-      `,
-      highlighted: css`
-        transition: all 200ms ease-in-out;
-        transform: scale3d(1.03, 1.03, 1);
-      `,
-      deemphasized: css`
-        transition: all 200ms ease-in-out;
-        fill-opacity: 0.5;
-      `,
+      normal: css({
+        [theme.transitions.handleMotion('no-preference')]: {
+          transition: 'all 200ms ease-in-out',
+        },
+      }),
+      highlighted: css({
+        [theme.transitions.handleMotion('no-preference')]: {
+          transition: 'all 200ms ease-in-out',
+        },
+        transform: 'scale3d(1.03, 1.03, 1)',
+      }),
+      deemphasized: css({
+        [theme.transitions.handleMotion('no-preference')]: {
+          transition: 'all 200ms ease-in-out',
+        },
+        fillOpacity: 0.5,
+      }),
     },
-    tooltipPortal: css`
-      ${getTooltipContainerStyles(theme)}
-    `,
+    tooltipPortal: css(getTooltipContainerStyles(theme)),
   };
 };

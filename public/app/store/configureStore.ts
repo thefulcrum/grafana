@@ -1,9 +1,26 @@
-import { configureStore as reduxConfigureStore, getDefaultMiddleware } from '@reduxjs/toolkit';
-import { ThunkMiddleware } from 'redux-thunk';
-import { setStore } from './store';
+import { configureStore as reduxConfigureStore, createListenerMiddleware } from '@reduxjs/toolkit';
+import { setupListeners } from '@reduxjs/toolkit/query';
+import { Middleware } from 'redux';
+
+import { alertingAPI as alertingPackageAPI } from '@grafana/alerting/unstable';
+import { browseDashboardsAPI } from 'app/features/browse-dashboards/api/browseDashboardsAPI';
+import { publicDashboardApi } from 'app/features/dashboard/api/publicDashboardApi';
+import { cloudMigrationAPI } from 'app/features/migrate-to-cloud/api';
+import { userPreferencesAPI } from 'app/features/preferences/api';
 import { StoreState } from 'app/types/store';
-import { addReducer, createRootReducer } from '../core/reducers/root';
+
+import { advisorAPIv0alpha1 } from '../api/clients/advisor/v0alpha1';
+import { folderAPIv1beta1 } from '../api/clients/folder/v1beta1';
+import { iamAPIv0alpha1 } from '../api/clients/iam/v0alpha1';
+import { playlistAPIv0alpha1 } from '../api/clients/playlist/v0alpha1';
+import { provisioningAPIv0alpha1 } from '../api/clients/provisioning/v0alpha1';
+// Used by the API client generator
+// PLOP_INJECT_IMPORT
 import { buildInitialState } from '../core/reducers/navModel';
+import { addReducer, createRootReducer } from '../core/reducers/root';
+import { alertingApi } from '../features/alerting/unified/api/alertingApi';
+
+import { setStore } from './store';
 
 export function addRootReducer(reducers: any) {
   // this is ok now because we add reducers before configureStore is called
@@ -12,16 +29,34 @@ export function addRootReducer(reducers: any) {
   addReducer(reducers);
 }
 
-export function configureStore(initialState?: Partial<StoreState>) {
-  const reduxDefaultMiddleware = getDefaultMiddleware<StoreState>({
-    thunk: true,
-    serializableCheck: false,
-    immutableCheck: false,
-  } as any);
+const listenerMiddleware = createListenerMiddleware();
+const extraMiddleware: Middleware[] = [];
 
-  const store = reduxConfigureStore<StoreState>({
+export function addExtraMiddleware(middleware: Middleware) {
+  extraMiddleware.push(middleware);
+}
+
+export function configureStore(initialState?: Partial<StoreState>) {
+  const store = reduxConfigureStore({
     reducer: createRootReducer(),
-    middleware: (reduxDefaultMiddleware as unknown) as [ThunkMiddleware<StoreState>],
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({ thunk: true, serializableCheck: false, immutableCheck: false }).concat(
+        listenerMiddleware.middleware,
+        alertingApi.middleware,
+        alertingPackageAPI.middleware,
+        publicDashboardApi.middleware,
+        browseDashboardsAPI.middleware,
+        cloudMigrationAPI.middleware,
+        userPreferencesAPI.middleware,
+        iamAPIv0alpha1.middleware,
+        playlistAPIv0alpha1.middleware,
+        provisioningAPIv0alpha1.middleware,
+        folderAPIv1beta1.middleware,
+        advisorAPIv0alpha1.middleware,
+        // PLOP_INJECT_MIDDLEWARE
+        // Used by the API client generator
+        ...extraMiddleware
+      ),
     devTools: process.env.NODE_ENV !== 'production',
     preloadedState: {
       navIndex: buildInitialState(),
@@ -29,44 +64,12 @@ export function configureStore(initialState?: Partial<StoreState>) {
     },
   });
 
+  // this enables "refetchOnFocus" and "refetchOnReconnect" for RTK Query
+  setupListeners(store.dispatch);
+
   setStore(store);
   return store;
 }
 
-/*
-function getActionsToIgnoreSerializableCheckOn() {
-  return [
-    'dashboard/setPanelAngularComponent',
-    'dashboard/panelModelAndPluginReady',
-    'dashboard/dashboardInitCompleted',
-    'plugins/panelPluginLoaded',
-    'explore/initializeExplore',
-    'explore/changeRange',
-    'explore/updateDatasourceInstance',
-    'explore/queryStoreSubscription',
-    'explore/queryStreamUpdated',
-  ];
-}
-
-function getPathsToIgnoreMutationAndSerializableCheckOn() {
-  return [
-    'plugins.panels',
-    'dashboard.panels',
-    'dashboard.getModel',
-    'payload.plugin',
-    'panelEditorNew.getPanel',
-    'panelEditorNew.getSourcePanel',
-    'panelEditorNew.getData',
-    'explore.left.queryResponse',
-    'explore.right.queryResponse',
-    'explore.left.datasourceInstance',
-    'explore.right.datasourceInstance',
-    'explore.left.range',
-    'explore.left.eventBridge',
-    'explore.right.eventBridge',
-    'explore.right.range',
-    'explore.left.querySubscription',
-    'explore.right.querySubscription',
-  ];
-}
-*/
+export type RootState = ReturnType<ReturnType<typeof configureStore>['getState']>;
+export type AppDispatch = ReturnType<typeof configureStore>['dispatch'];

@@ -1,23 +1,22 @@
-import { InlineField, Input, InlineSwitch, Select } from '@grafana/ui';
-import React, { ComponentProps, useState } from 'react';
-import { extendedStats } from '../../../../query_def';
-import { useDispatch } from '../../../../hooks/useStatelessReducer';
-import { changeMetricMeta, changeMetricSetting } from '../state/actions';
-import {
-  MetricAggregation,
-  isMetricAggregationWithInlineScript,
-  isMetricAggregationWithMissingSupport,
-  ExtendedStat,
-} from '../aggregations';
-import { BucketScriptSettingsEditor } from './BucketScriptSettingsEditor';
-import { SettingField } from './SettingField';
-import { SettingsEditorContainer } from '../../SettingsEditorContainer';
-import { useDescription } from './useDescription';
-import { MovingAverageSettingsEditor } from './MovingAverageSettingsEditor';
-import { TopMetricsSettingsEditor } from './TopMetricsSettingsEditor';
 import { uniqueId } from 'lodash';
+import { ComponentProps, useId, useRef, useState } from 'react';
+import * as React from 'react';
+
+import { InlineField, Input, InlineSwitch, Select } from '@grafana/ui';
+import { MetricAggregation, ExtendedStat } from 'app/plugins/datasource/elasticsearch/dataquery.gen';
+
+import { useDispatch } from '../../../../hooks/useStatelessReducer';
+import { extendedStats } from '../../../../queryDef';
+import { SettingsEditorContainer } from '../../SettingsEditorContainer';
+import { isMetricAggregationWithInlineScript, isMetricAggregationWithMissingSupport } from '../aggregations';
+import { changeMetricMeta, changeMetricSetting } from '../state/actions';
 import { metricAggregationConfig } from '../utils';
-import { useQuery } from '../../ElasticsearchQueryContext';
+
+import { BucketScriptSettingsEditor } from './BucketScriptSettingsEditor';
+import { MovingAverageSettingsEditor } from './MovingAverageSettingsEditor';
+import { SettingField } from './SettingField';
+import { TopMetricsSettingsEditor } from './TopMetricsSettingsEditor';
+import { useDescription } from './useDescription';
 
 // TODO: Move this somewhere and share it with BucketsAggregation Editor
 const inlineFieldProps: Partial<ComponentProps<typeof InlineField>> = {
@@ -30,9 +29,14 @@ interface Props {
 }
 
 export const SettingsEditor = ({ metric, previousMetrics }: Props) => {
+  const { current: baseId } = useRef(uniqueId('es-setting-'));
+
   const dispatch = useDispatch();
   const description = useDescription(metric);
-  const query = useQuery();
+
+  const sizeFieldId = useId();
+  const unitFieldId = useId();
+  const modeFieldId = useId();
 
   const rateAggUnitOptions = [
     { value: 'second', label: 'Second' },
@@ -63,7 +67,7 @@ export const SettingsEditor = ({ metric, previousMetrics }: Props) => {
       {metric.type === 'moving_fn' && (
         <>
           <SettingField label="Window" metric={metric} settingName="window" />
-          <SettingField label="Script" metric={metric} settingName="script" />
+          <SettingField label="Script" metric={metric} settingName="script" inputType="textarea" />
           <SettingField label="Shift" metric={metric} settingName="shift" />
         </>
       )}
@@ -75,10 +79,10 @@ export const SettingsEditor = ({ metric, previousMetrics }: Props) => {
       )}
 
       {(metric.type === 'raw_data' || metric.type === 'raw_document') && (
-        <InlineField label="Size" {...inlineFieldProps}>
+        <InlineField label="Size" {...inlineFieldProps} htmlFor={sizeFieldId}>
           <Input
-            id={`ES-query-${query.refId}_metric-${metric.id}-size`}
-            onBlur={(e) => dispatch(changeMetricSetting(metric, 'size', e.target.value))}
+            id={sizeFieldId}
+            onBlur={(e) => dispatch(changeMetricSetting({ metric, settingName: 'size', newValue: e.target.value }))}
             defaultValue={metric.settings?.size ?? metricAggregationConfig['raw_data'].defaults.settings?.size}
           />
         </InlineField>
@@ -96,7 +100,7 @@ export const SettingsEditor = ({ metric, previousMetrics }: Props) => {
             <ExtendedStatSetting
               key={stat.value}
               stat={stat}
-              onChange={(checked) => dispatch(changeMetricMeta(metric, stat.value, checked))}
+              onChange={(newValue) => dispatch(changeMetricMeta({ metric, meta: stat.value, newValue }))}
               value={
                 metric.meta?.[stat.value] !== undefined
                   ? !!metric.meta?.[stat.value]
@@ -112,7 +116,16 @@ export const SettingsEditor = ({ metric, previousMetrics }: Props) => {
       {metric.type === 'percentiles' && (
         <InlineField label="Percentiles" {...inlineFieldProps}>
           <Input
-            onBlur={(e) => dispatch(changeMetricSetting(metric, 'percents', e.target.value.split(',').filter(Boolean)))}
+            id={`${baseId}-percentiles-percents`}
+            onBlur={(e) =>
+              dispatch(
+                changeMetricSetting({
+                  metric,
+                  settingName: 'percents',
+                  newValue: e.target.value.split(',').filter(Boolean),
+                })
+              )
+            }
             defaultValue={
               metric.settings?.percents || metricAggregationConfig['percentiles'].defaults.settings?.percents
             }
@@ -123,21 +136,31 @@ export const SettingsEditor = ({ metric, previousMetrics }: Props) => {
 
       {metric.type === 'rate' && (
         <>
-          <InlineField label="Unit" {...inlineFieldProps} data-testid="unit-select">
+          <InlineField label="Unit" {...inlineFieldProps} data-testid="unit-select" htmlFor={unitFieldId}>
             <Select
+<<<<<<< HEAD
               menuShouldPortal
               id={`ES-query-${query.refId}_metric-${metric.id}-unit`}
               onChange={(e) => dispatch(changeMetricSetting(metric, 'unit', e.value))}
+=======
+              id={unitFieldId}
+              onChange={(e) => dispatch(changeMetricSetting({ metric, settingName: 'unit', newValue: e.value }))}
+>>>>>>> v12.1.0
               options={rateAggUnitOptions}
               value={metric.settings?.unit}
             />
           </InlineField>
 
-          <InlineField label="Mode" {...inlineFieldProps} data-testid="mode-select">
+          <InlineField label="Mode" {...inlineFieldProps} data-testid="mode-select" htmlFor={modeFieldId}>
             <Select
+<<<<<<< HEAD
               menuShouldPortal
               id={`ES-query-${query.refId}_metric-${metric.id}-mode`}
               onChange={(e) => dispatch(changeMetricSetting(metric, 'mode', e.value))}
+=======
+              id={modeFieldId}
+              onChange={(e) => dispatch(changeMetricSetting({ metric, settingName: 'mode', newValue: e.value }))}
+>>>>>>> v12.1.0
               options={rateAggModeOptions}
               value={metric.settings?.unit}
             />
@@ -146,7 +169,13 @@ export const SettingsEditor = ({ metric, previousMetrics }: Props) => {
       )}
 
       {isMetricAggregationWithInlineScript(metric) && (
-        <SettingField label="Script" metric={metric} settingName="script" placeholder="_value * 1" />
+        <SettingField
+          label="Script"
+          metric={metric}
+          settingName="script"
+          placeholder="_value * 1"
+          inputType="textarea"
+        />
       )}
 
       {isMetricAggregationWithMissingSupport(metric) && (

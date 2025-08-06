@@ -1,6 +1,11 @@
 package migrations
 
-import . "github.com/grafana/grafana/pkg/services/sqlstore/migrator"
+import (
+	"fmt"
+
+	. "github.com/grafana/grafana/pkg/services/sqlstore/migrator"
+	"github.com/grafana/grafana/pkg/util/xorm"
+)
 
 func addPreferencesMigrations(mg *Migrator) {
 	mg.AddMigration("drop preferences table v2", NewDropTableMigration("preferences"))
@@ -42,4 +47,62 @@ func addPreferencesMigrations(mg *Migrator) {
 		SQLite("UPDATE preferences SET team_id=0 WHERE team_id IS NULL;").
 		Postgres("UPDATE preferences SET team_id=0 WHERE team_id IS NULL;").
 		Mysql("UPDATE preferences SET team_id=0 WHERE team_id IS NULL;"))
+
+	mg.AddMigration("Add column week_start in preferences", NewAddColumnMigration(preferencesV2, &Column{
+		Name: "week_start", Type: DB_NVarchar, Length: 10, Nullable: true,
+	}))
+
+	mg.AddMigration("Add column preferences.json_data", NewAddColumnMigration(preferencesV2, &Column{
+		Name: "json_data", Type: DB_Text, Nullable: true,
+	}))
+	// change column type of preferences.json_data
+	mg.AddMigration("alter preferences.json_data to mediumtext v1", NewRawSQLMigration("").
+		Mysql("ALTER TABLE preferences MODIFY json_data MEDIUMTEXT;"))
+
+	mg.AddMigration("Add preferences index org_id", NewAddIndexMigration(preferencesV2, preferencesV2.Indices[0]))
+	mg.AddMigration("Add preferences index user_id", NewAddIndexMigration(preferencesV2, preferencesV2.Indices[1]))
+
+	mg.AddMigration("Add home_dashboard_uid column to preferences table", NewAddColumnMigration(preferencesV2, &Column{
+		Name: "home_dashboard_uid", Type: DB_NVarchar, Length: 40, Nullable: true,
+	}))
+
+	mg.AddMigration("Add missing dashboard_uid to preferences table", &AddDashboardUIDMigration{})
+}
+
+type AddDashboardUIDMigration struct {
+	MigrationBase
+}
+
+func (m *AddDashboardUIDMigration) SQL(dialect Dialect) string {
+	return "code migration"
+}
+
+func (m *AddDashboardUIDMigration) Exec(sess *xorm.Session, mg *Migrator) error {
+	return RunPreferencesMigration(sess, mg.Dialect.DriverName())
+}
+
+func RunPreferencesMigration(sess *xorm.Session, driverName string) error {
+	// sqlite
+	sql := `UPDATE preferences
+	SET home_dashboard_uid = (SELECT uid FROM dashboard WHERE dashboard.id = preferences.home_dashboard_id)
+	WHERE home_dashboard_uid IS NULL AND EXISTS (SELECT 1 FROM dashboard WHERE dashboard.id = preferences.home_dashboard_id);`
+	switch driverName {
+	case Postgres:
+		sql = `UPDATE preferences
+		SET home_dashboard_uid = dashboard.uid
+		FROM dashboard
+		WHERE preferences.home_dashboard_id = dashboard.id
+			AND (preferences.home_dashboard_uid IS NULL);`
+	case MySQL:
+		sql = `UPDATE preferences
+		LEFT JOIN dashboard ON preferences.home_dashboard_id = dashboard.id
+		SET preferences.home_dashboard_uid = dashboard.uid
+		WHERE preferences.home_dashboard_uid IS NULL;`
+	}
+
+	if _, err := sess.Exec(sql); err != nil {
+		return fmt.Errorf("failed to set home_dashboard_uid for preferences: %w", err)
+	}
+
+	return nil
 }

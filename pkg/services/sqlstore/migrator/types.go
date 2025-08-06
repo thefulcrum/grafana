@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"xorm.io/xorm"
+	"github.com/grafana/grafana/pkg/util/xorm"
 )
 
 const (
@@ -19,6 +19,10 @@ type Migration interface {
 	Id() string
 	SetId(string)
 	GetCondition() MigrationCondition
+	// SkipMigrationLog is used by dashboard alert migration to Grafana 8 Alerts
+	// for skipping recording it in the migration_log so that it can run several times.
+	// For all the other migrations it should be false.
+	SkipMigrationLog() bool
 }
 
 type CodeMigration interface {

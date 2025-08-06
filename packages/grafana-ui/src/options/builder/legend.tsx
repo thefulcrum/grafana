@@ -1,57 +1,75 @@
 import { PanelOptionsEditorBuilder, standardEditorsRegistry, StatsPickerConfigSettings } from '@grafana/data';
-import { LegendDisplayMode } from '../../index';
-import { OptionsWithLegend } from '../models.gen';
+import { t } from '@grafana/i18n';
+import { LegendDisplayMode, OptionsWithLegend } from '@grafana/schema';
 
 /**
  * @alpha
  */
 export function addLegendOptions<T extends OptionsWithLegend>(
   builder: PanelOptionsEditorBuilder<T>,
-  includeLegendCalcs = true
+  includeLegendCalcs = true,
+  showLegend = true
 ) {
+  const category = [t('grafana-ui.builder.legend.category', 'Legend')];
   builder
+    .addBooleanSwitch({
+      path: 'legend.showLegend',
+      name: t('grafana-ui.builder.legend.name-visibility', 'Visibility'),
+      category,
+      description: '',
+      defaultValue: showLegend,
+    })
     .addRadio({
       path: 'legend.displayMode',
-      name: 'Legend mode',
-      category: ['Legend'],
+      name: t('grafana-ui.builder.legend.name-mode', 'Mode'),
+      category,
       description: '',
       defaultValue: LegendDisplayMode.List,
       settings: {
         options: [
-          { value: LegendDisplayMode.List, label: 'List' },
-          { value: LegendDisplayMode.Table, label: 'Table' },
-          { value: LegendDisplayMode.Hidden, label: 'Hidden' },
+          { value: LegendDisplayMode.List, label: t('grafana-ui.builder.legend.mode-options.label-list', 'List') },
+          { value: LegendDisplayMode.Table, label: t('grafana-ui.builder.legend.mode-options.label-table', 'Table') },
         ],
       },
+      showIf: (c) => c.legend.showLegend,
     })
     .addRadio({
       path: 'legend.placement',
-      name: 'Legend placement',
-      category: ['Legend'],
+      name: t('grafana-ui.builder.legend.name-placement', 'Placement'),
+      category,
       description: '',
       defaultValue: 'bottom',
       settings: {
         options: [
-          { value: 'bottom', label: 'Bottom' },
-          { value: 'right', label: 'Right' },
+          { value: 'bottom', label: t('grafana-ui.builder.legend.placement-options.label-bottom', 'Bottom') },
+          { value: 'right', label: t('grafana-ui.builder.legend.placement-options.label-right', 'Right') },
         ],
       },
-      showIf: (c) => c.legend.displayMode !== LegendDisplayMode.Hidden,
+      showIf: (c) => c.legend.showLegend,
+    })
+    .addNumberInput({
+      path: 'legend.width',
+      name: t('grafana-ui.builder.legend.name-width', 'Width'),
+      category,
+      settings: {
+        placeholder: 'Auto',
+      },
+      showIf: (c) => c.legend.showLegend && c.legend.placement === 'right',
     });
 
   if (includeLegendCalcs) {
     builder.addCustomEditor<StatsPickerConfigSettings, string[]>({
       id: 'legend.calcs',
       path: 'legend.calcs',
-      name: 'Legend values',
-      category: ['Legend'],
-      description: 'Select values or calculations to show in legend',
-      editor: standardEditorsRegistry.get('stats-picker').editor as any,
+      name: t('grafana-ui.builder.legend.name-values', 'Values'),
+      category,
+      description: t('grafana-ui.builder.legend.description-values', 'Select values or calculations to show in legend'),
+      editor: standardEditorsRegistry.get('stats-picker').editor,
       defaultValue: [],
       settings: {
         allowMultiple: true,
       },
-      showIf: (currentConfig) => currentConfig.legend.displayMode !== LegendDisplayMode.Hidden,
+      showIf: (currentConfig) => currentConfig.legend.showLegend !== false,
     });
   }
 }

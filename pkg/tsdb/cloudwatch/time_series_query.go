@@ -3,10 +3,14 @@ package cloudwatch
 import (
 	"context"
 	"fmt"
+	"regexp"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana/pkg/infra/log"
-	"golang.org/x/sync/errgroup"
+	"github.com/grafana/grafana/pkg/tsdb/cloudwatch/features"
+	"github.com/grafana/grafana/pkg/tsdb/cloudwatch/models"
+	"github.com/grafana/grafana/pkg/tsdb/cloudwatch/utils"
 )
 
 type responseWrapper struct {
@@ -14,90 +18,105 @@ type responseWrapper struct {
 	RefId        string
 }
 
-func (e *cloudWatchExecutor) executeTimeSeriesQuery(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	plog.Debug("Executing time series query")
+func (ds *DataSource) executeTimeSeriesQuery(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+	ds.logger.FromContext(ctx).Debug("Executing time series query")
 	resp := backend.NewQueryDataResponse()
 
 	if len(req.Queries) == 0 {
-		return nil, fmt.Errorf("request contains no queries")
+		return nil, backend.DownstreamError(fmt.Errorf("request contains no queries"))
 	}
 
-	// startTime and endTime are always the same for all queries
-	startTime := req.Queries[0].TimeRange.From
-	endTime := req.Queries[0].TimeRange.To
-	if !startTime.Before(endTime) {
-		return nil, fmt.Errorf("invalid time range: start time must be before end time")
-	}
+	timeBatches := utils.BatchDataQueriesByTimeRange(req.Queries)
+	requestQueriesByTimeAndRegion := make(map[string][]*models.CloudWatchQuery)
+	for i, timeBatch := range timeBatches {
+		startTime := timeBatch[0].TimeRange.From
+		endTime := timeBatch[0].TimeRange.To
+		if !startTime.Before(endTime) {
+			return nil, backend.DownstreamError(fmt.Errorf("invalid time range: start time must be before end time"))
+		}
+		requestQueries, err := models.ParseMetricDataQueries(timeBatch, startTime, endTime, ds.Settings.Region, ds.logger.FromContext(ctx),
+			features.IsEnabled(ctx, features.FlagCloudWatchCrossAccountQuerying))
+		if err != nil {
+			return nil, err
+		}
 
-	requestQueriesByRegion, err := e.parseQueries(req.Queries, startTime, endTime)
-	if err != nil {
-		return nil, err
+		for _, query := range requestQueries {
+			key := fmt.Sprintf("%d %s", i, query.Region)
+			if _, exist := requestQueriesByTimeAndRegion[key]; !exist {
+				requestQueriesByTimeAndRegion[key] = []*models.CloudWatchQuery{}
+			}
+			requestQueriesByTimeAndRegion[key] = append(requestQueriesByTimeAndRegion[key], query)
+		}
 	}
-
-	if len(requestQueriesByRegion) == 0 {
+	if len(requestQueriesByTimeAndRegion) == 0 {
 		return backend.NewQueryDataResponse(), nil
 	}
 
 	resultChan := make(chan *responseWrapper, len(req.Queries))
 	eg, ectx := errgroup.WithContext(ctx)
-	for r, q := range requestQueriesByRegion {
-		requestQueries := q
-		region := r
-		eg.Go(func() error {
-			defer func() {
-				if err := recover(); err != nil {
-					plog.Error("Execute Get Metric Data Query Panic", "error", err, "stack", log.Stack(1))
-					if theErr, ok := err.(error); ok {
-						resultChan <- &responseWrapper{
-							DataResponse: &backend.DataResponse{
-								Error: theErr,
-							},
+	for _, timeAndRegionQueries := range requestQueriesByTimeAndRegion {
+		batches := [][]*models.CloudWatchQuery{timeAndRegionQueries}
+		if features.IsEnabled(ctx, features.FlagCloudWatchBatchQueries) {
+			batches = getMetricQueryBatches(timeAndRegionQueries, ds.logger.FromContext(ctx))
+		}
+
+		// region, startTime, and endTime are the same for the set of queries
+		region := timeAndRegionQueries[0].Region
+		startTime := timeAndRegionQueries[0].StartTime
+		endTime := timeAndRegionQueries[0].EndTime
+
+		for _, batch := range batches {
+			requestQueries := batch
+			eg.Go(func() error {
+				defer func() {
+					if err := recover(); err != nil {
+						ds.logger.FromContext(ctx).Error("Execute Get Metric Data Query Panic", "error", err, "stack", utils.Stack(1))
+						if theErr, ok := err.(error); ok {
+							resultChan <- &responseWrapper{
+								DataResponse: &backend.DataResponse{
+									Error: theErr,
+								},
+							}
 						}
 					}
+				}()
+
+				client, err := ds.getCWClient(ctx, region)
+				if err != nil {
+					return err
 				}
-			}()
 
-			client, err := e.getCWClient(region, req.PluginContext)
-			if err != nil {
-				return err
-			}
-
-			queries, err := e.transformRequestQueriesToCloudWatchQueries(requestQueries)
-			if err != nil {
-				return err
-			}
-
-			metricDataInput, err := e.buildMetricDataInput(startTime, endTime, queries)
-			if err != nil {
-				return err
-			}
-
-			mdo, err := e.executeRequest(ectx, client, metricDataInput)
-			if err != nil {
-				return err
-			}
-
-			responses, err := e.parseResponse(mdo, queries)
-			if err != nil {
-				return err
-			}
-
-			res, err := e.transformQueryResponsesToQueryResult(responses, requestQueries, startTime, endTime)
-			if err != nil {
-				return err
-			}
-
-			for refID, queryRes := range res {
-				resultChan <- &responseWrapper{
-					DataResponse: queryRes,
-					RefId:        refID,
+				metricDataInput, err := ds.buildMetricDataInput(ctx, startTime, endTime, requestQueries)
+				if err != nil {
+					return err
 				}
-			}
-			return nil
-		})
+
+				mdo, err := ds.executeRequest(ectx, client, metricDataInput)
+				if err != nil {
+					return err
+				}
+
+				requestQueries, err = ds.getDimensionValuesForWildcards(ctx, region, client, requestQueries, ds.tagValueCache, ds.Settings.GrafanaSettings.ListMetricsPageLimit, shouldSkipFetchingWildcards)
+				if err != nil {
+					return err
+				}
+
+				res, err := ds.parseResponse(ctx, mdo, requestQueries)
+				if err != nil {
+					return err
+				}
+
+				for _, responseWrapper := range res {
+					resultChan <- responseWrapper
+				}
+
+				return nil
+			})
+		}
 	}
 
 	if err := eg.Wait(); err != nil {
+<<<<<<< HEAD
 		dataResponse := backend.DataResponse{
 			Error: fmt.Errorf("metric request error: %q", err),
 		}
@@ -105,6 +124,13 @@ func (e *cloudWatchExecutor) executeTimeSeriesQuery(ctx context.Context, req *ba
 			DataResponse: &dataResponse,
 		}
 		return nil, err
+=======
+		dataResponse := backend.ErrorResponseWithErrorSource(fmt.Errorf("metric request error: %w", err))
+		resultChan <- &responseWrapper{
+			RefId:        getQueryRefIdFromErrorString(err.Error(), requestQueriesByTimeAndRegion),
+			DataResponse: &dataResponse,
+		}
+>>>>>>> v12.1.0
 	}
 	close(resultChan)
 
@@ -113,4 +139,20 @@ func (e *cloudWatchExecutor) executeTimeSeriesQuery(ctx context.Context, req *ba
 	}
 
 	return resp, nil
+}
+
+func getQueryRefIdFromErrorString(err string, queriesByRegion map[string][]*models.CloudWatchQuery) string {
+	// error can be in format "Error in expression 'test': Invalid syntax"
+	// so we can find the query id or ref id between the quotations
+	erroredRefId := ""
+
+	for _, queries := range queriesByRegion {
+		for _, query := range queries {
+			if regexp.MustCompile(`'`+query.RefId+`':`).MatchString(err) || regexp.MustCompile(`'`+query.Id+`':`).MatchString(err) {
+				erroredRefId = query.RefId
+			}
+		}
+	}
+	// if errorRefId is empty, it means the error concerns all queries (error metric limit exceeded, for example)
+	return erroredRefId
 }

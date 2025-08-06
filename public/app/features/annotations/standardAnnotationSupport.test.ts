@@ -1,4 +1,5 @@
 import { FieldType, toDataFrame } from '@grafana/data';
+
 import { getAnnotationsFromData } from './standardAnnotationSupport';
 
 describe('DataFrame to annotations', () => {
@@ -48,7 +49,7 @@ describe('DataFrame to annotations', () => {
     ]);
   });
 
-  test('explicit mappins', async () => {
+  test('explicit mappings', async () => {
     const frame = toDataFrame({
       fields: [
         { name: 'time1', values: [111, 222, 333] },
@@ -111,6 +112,10 @@ describe('DataFrame to annotations', () => {
         { name: 'newState', values: ['alerting'] },
         { name: 'data', values: [{ text: 'a', value: 'A' }] },
         { name: 'panelId', values: [4] },
+<<<<<<< HEAD
+=======
+        { name: 'alertId', values: [0] },
+>>>>>>> v12.1.0
       ],
     });
 
@@ -134,6 +139,10 @@ describe('DataFrame to annotations', () => {
           title: 'title',
           type: 'default',
           userId: 'Admin',
+<<<<<<< HEAD
+=======
+          alertId: 0,
+>>>>>>> v12.1.0
         },
       ],
     ]);

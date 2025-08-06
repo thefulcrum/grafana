@@ -1,16 +1,18 @@
-import { getDefaultTimeRange } from '@grafana/data';
+import { AnnotationQuery, DataSourceApi, getDefaultTimeRange } from '@grafana/data';
+import { createDashboardModelFixture } from 'app/features/dashboard/state/__fixtures__/dashboardFixtures';
 
-import { LegacyAnnotationQueryRunner } from './LegacyAnnotationQueryRunner';
-import { AnnotationQueryRunnerOptions } from './types';
 import { silenceConsoleOutput } from '../../../../../test/core/utils/silenceConsoleOutput';
 import * as store from '../../../../store/store';
 
+import { LegacyAnnotationQueryRunner } from './LegacyAnnotationQueryRunner';
+import { AnnotationQueryRunnerOptions } from './types';
+
 function getDefaultOptions(annotationQuery?: jest.Mock): AnnotationQueryRunnerOptions {
-  const annotation: any = {};
-  const dashboard: any = {};
-  const datasource: any = {
+  const annotation = {} as AnnotationQuery;
+  const dashboard = createDashboardModelFixture();
+  const datasource = {
     annotationQuery: annotationQuery ?? jest.fn().mockResolvedValue([{ id: '1' }]),
-  };
+  } as unknown as DataSourceApi;
   const range = getDefaultTimeRange();
 
   return { annotation, datasource, dashboard, range };
@@ -30,9 +32,9 @@ describe('LegacyAnnotationQueryRunner', () => {
 
   describe('when canWork is called with correct props', () => {
     it('then it should return true', () => {
-      const datasource: any = {
+      const datasource = {
         annotationQuery: jest.fn(),
-      };
+      } as unknown as DataSourceApi;
 
       expect(runner.canRun(datasource)).toBe(true);
     });
@@ -40,18 +42,51 @@ describe('LegacyAnnotationQueryRunner', () => {
 
   describe('when canWork is called without datasource', () => {
     it('then it should return false', () => {
+<<<<<<< HEAD
       const datasource: any = undefined;
+=======
+      const datasource = undefined;
+>>>>>>> v12.1.0
 
       expect(runner.canRun(datasource)).toBe(false);
     });
   });
 
+<<<<<<< HEAD
+=======
+  describe('when run is called without a valid datasource', () => {
+    it('then it should return empty results when datasource is undefined', async () => {
+      const datasource = undefined;
+      const options = { ...getDefaultOptions(), datasource };
+
+      await expect(runner.run(options)).toEmitValuesWith((received) => {
+        expect(received).toHaveLength(1);
+        const results = received[0];
+        expect(results).toEqual([]);
+      });
+    });
+
+    it('then it should return empty results when annotationQuery is undefined', async () => {
+      const datasource = {
+        annotationQuery: undefined,
+      } as unknown as DataSourceApi;
+      const options = { ...getDefaultOptions(), datasource };
+
+      await expect(runner.run(options)).toEmitValuesWith((received) => {
+        expect(received).toHaveLength(1);
+        const results = received[0];
+        expect(results).toEqual([]);
+      });
+    });
+  });
+
+>>>>>>> v12.1.0
   describe('when canWork is called with incorrect props', () => {
     it('then it should return false', () => {
-      const datasource: any = {
+      const datasource = {
         annotationQuery: jest.fn(),
         annotations: {},
-      };
+      } as unknown as DataSourceApi;
 
       expect(runner.canRun(datasource)).toBe(false);
     });
@@ -59,10 +94,10 @@ describe('LegacyAnnotationQueryRunner', () => {
 
   describe('when run is called with unsupported props', () => {
     it('then it should return the correct results', async () => {
-      const datasource: any = {
+      const datasource = {
         annotationQuery: jest.fn(),
         annotations: {},
-      };
+      } as unknown as DataSourceApi;
       const options = { ...getDefaultOptions(), datasource };
 
       await expect(runner.run(options)).toEmitValuesWith((received) => {

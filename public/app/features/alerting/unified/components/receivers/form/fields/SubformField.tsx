@@ -1,19 +1,42 @@
-import React, { FC, useState } from 'react';
-import { NotificationChannelOption } from 'app/types';
-import { FieldError, DeepMap, useFormContext } from 'react-hook-form';
-import { OptionField } from './OptionField';
+import { useState } from 'react';
+import { DeepMap, FieldError, useFormContext } from 'react-hook-form';
+
+import { Trans, t } from '@grafana/i18n';
 import { Button, useStyles2 } from '@grafana/ui';
+import { NotificationChannelOption, NotificationChannelSecureFields, OptionMeta } from 'app/types/alerting';
+
 import { ActionIcon } from '../../../rules/ActionIcon';
+
+import { OptionField } from './OptionField';
 import { getReceiverFormFieldStyles } from './styles';
 
 interface Props {
   defaultValue: any;
   option: NotificationChannelOption;
+  getOptionMeta?: (option: NotificationChannelOption) => OptionMeta;
   pathPrefix: string;
   errors?: DeepMap<any, FieldError>;
+  readOnly?: boolean;
+  secureFields: NotificationChannelSecureFields;
+  /**
+   * Callback function to delete a subform field. Removal requires side effects
+   * like settings and secure fields cleanup.
+   */
+  onDelete?: (settingsPath: string, option: NotificationChannelOption) => void;
+  onResetSecureField?: (propertyName: string) => void;
 }
 
-export const SubformField: FC<Props> = ({ option, pathPrefix, errors, defaultValue }) => {
+export const SubformField = ({
+  option,
+  pathPrefix,
+  errors,
+  defaultValue,
+  getOptionMeta,
+  readOnly = false,
+  secureFields,
+  onDelete,
+  onResetSecureField,
+}: Props) => {
   const styles = useStyles2(getReceiverFormFieldStyles);
   const name = `${pathPrefix}${option.propertyName}`;
   const { watch } = useFormContext();
@@ -22,22 +45,34 @@ export const SubformField: FC<Props> = ({ option, pathPrefix, errors, defaultVal
 
   const [show, setShow] = useState(!!value);
 
+  const onDeleteClick = () => {
+    onDelete?.(name, option);
+    setShow(false);
+  };
+
   return (
     <div className={styles.wrapper} data-testid={`${name}.container`}>
       <h6>{option.label}</h6>
       {option.description && <p className={styles.description}>{option.description}</p>}
       {show && (
         <>
-          <ActionIcon
-            data-testid={`${name}.delete-button`}
-            icon="trash-alt"
-            tooltip="delete"
-            onClick={() => setShow(false)}
-            className={styles.deleteIcon}
-          />
+          {!readOnly && onDelete && (
+            <ActionIcon
+              data-testid={`${name}.delete-button`}
+              icon="trash-alt"
+              tooltip={t('alerting.subform-field.tooltip-delete', 'delete')}
+              onClick={onDeleteClick}
+              className={styles.deleteIcon}
+            />
+          )}
           {(option.subformOptions ?? []).map((subOption) => {
             return (
               <OptionField
+                readOnly={readOnly}
+                getOptionMeta={getOptionMeta}
+                onResetSecureField={onResetSecureField}
+                onDeleteSubform={onDelete}
+                secureFields={secureFields}
                 defaultValue={defaultValue?.[subOption.propertyName]}
                 key={subOption.propertyName}
                 option={subOption}
@@ -48,7 +83,7 @@ export const SubformField: FC<Props> = ({ option, pathPrefix, errors, defaultVal
           })}
         </>
       )}
-      {!show && (
+      {!show && !readOnly && (
         <Button
           className={styles.addButton}
           type="button"
@@ -58,7 +93,7 @@ export const SubformField: FC<Props> = ({ option, pathPrefix, errors, defaultVal
           onClick={() => setShow(true)}
           data-testid={`${name}.add-button`}
         >
-          Add
+          <Trans i18nKey="alerting.subform-field.add">Add</Trans>
         </Button>
       )}
     </div>

@@ -1,79 +1,148 @@
-import React, { PureComponent } from 'react';
-import { hot } from 'react-hot-loader';
-import { connect } from 'react-redux';
-import { Icon, Tooltip } from '@grafana/ui';
-import { NavModel } from '@grafana/data';
-import { StoreState } from 'app/types';
-import { getNavModel } from 'app/core/selectors/navModel';
-import Page from 'app/core/components/Page/Page';
+import { css } from '@emotion/css';
+import { useEffect, useState } from 'react';
+
+import { GrafanaTheme2 } from '@grafana/data';
+import { Trans } from '@grafana/i18n';
+import { config, GrafanaBootConfig } from '@grafana/runtime';
+import { LinkButton, Stack, useStyles2 } from '@grafana/ui';
+import { AccessControlAction } from 'app/types/accessControl';
+
+import { contextSrv } from '../../core/services/context_srv';
+
+import { ServerStatsCard } from './ServerStatsCard';
 import { getServerStats, ServerStat } from './state/apis';
 
-interface Props {
-  navModel: NavModel;
-  getServerStats: () => Promise<ServerStat[]>;
-}
+export const ServerStats = () => {
+  const [stats, setStats] = useState<ServerStat | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const styles = useStyles2(getStyles);
 
-interface State {
-  stats: ServerStat[];
-  isLoading: boolean;
-}
+  const hasAccessToDataSources = contextSrv.hasPermission(AccessControlAction.DataSourcesRead);
+  const hasAccessToAdminUsers = contextSrv.hasPermission(AccessControlAction.UsersRead);
 
-export class ServerStats extends PureComponent<Props, State> {
-  state: State = {
-    stats: [],
-    isLoading: true,
-  };
-
-  async componentDidMount() {
-    try {
-      const stats = await this.props.getServerStats();
-      this.setState({ stats, isLoading: false });
-    } catch (error) {
-      console.error(error);
+  useEffect(() => {
+    if (contextSrv.hasPermission(AccessControlAction.ActionServerStatsRead)) {
+      getServerStats().then((stats) => {
+        setStats(stats);
+        setIsLoading(false);
+      });
     }
+  }, []);
+
+  if (!contextSrv.hasPermission(AccessControlAction.ActionServerStatsRead)) {
+    return null;
   }
 
-  render() {
-    const { navModel } = this.props;
-    const { stats, isLoading } = this.state;
-
-    return (
-      <Page navModel={navModel}>
-        <Page.Contents isLoading={isLoading}>
-          <table className="filter-table form-inline">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Value</th>
-              </tr>
-            </thead>
-            <tbody>{stats.map(StatItem)}</tbody>
-          </table>
-        </Page.Contents>
-      </Page>
-    );
-  }
-}
-
-function StatItem(stat: ServerStat) {
   return (
-    <tr key={stat.name}>
-      <td>
-        {stat.name}{' '}
-        {stat.tooltip && (
-          <Tooltip content={stat.tooltip} placement={'top'}>
-            <Icon name={'info-circle'} />
-          </Tooltip>
-        )}
-      </td>
-      <td>{stat.value}</td>
-    </tr>
+    <>
+      <h2 className={styles.title}>
+        <Trans i18nKey="admin.server-settings.title">Instance statistics</Trans>
+      </h2>
+      {!isLoading && !stats ? (
+        <p className={styles.notFound}>
+          <Trans i18nKey="admin.server-settings.not-found">No stats found.</Trans>
+        </p>
+      ) : (
+        <Stack
+          gap={2}
+          direction={{
+            xs: 'column',
+            md: 'row',
+          }}
+        >
+          <ServerStatsCard
+            isLoading={isLoading}
+            content={[
+              { name: 'Dashboards (starred)', value: `${stats?.dashboards} (${stats?.stars})` },
+              { name: 'Tags', value: stats?.tags },
+              { name: 'Playlists', value: stats?.playlists },
+              { name: 'Snapshots', value: stats?.snapshots },
+            ]}
+            footer={
+              <LinkButton href={'/dashboards'} variant={'secondary'}>
+                <Trans i18nKey="admin.server-settings.dashboards-button">Manage dashboards</Trans>
+              </LinkButton>
+            }
+          />
+
+          <Stack direction="column" gap={2}>
+            <ServerStatsCard
+              isLoading={isLoading}
+              content={[{ name: 'Data sources', value: stats?.datasources }]}
+              footer={
+                hasAccessToDataSources && (
+                  <LinkButton href={'/datasources'} variant={'secondary'}>
+                    <Trans i18nKey="admin.server-settings.data-sources-button">Manage data sources</Trans>
+                  </LinkButton>
+                )
+              }
+            />
+            <ServerStatsCard
+              isLoading={isLoading}
+              content={[{ name: 'Alerts', value: stats?.alerts }]}
+              footer={
+                <LinkButton href={'/alerting/list'} variant={'secondary'}>
+                  <Trans i18nKey="admin.server-settings.alerts-button">Manage alerts</Trans>
+                </LinkButton>
+              }
+            />
+          </Stack>
+          <ServerStatsCard
+            isLoading={isLoading}
+            content={[
+              { name: 'Organisations', value: stats?.orgs },
+              { name: 'Users total', value: stats?.users },
+              { name: 'Active sessions', value: stats?.activeSessions },
+              { name: 'Active users in last 30 days', value: stats?.activeUsers },
+              ...getAnonymousStatsContent(stats, config),
+            ]}
+            footer={
+              hasAccessToAdminUsers && (
+                <LinkButton href={'/admin/users'} variant={'secondary'}>
+                  <Trans i18nKey="admin.server-settings.users-button">Manage users</Trans>
+                </LinkButton>
+              )
+            }
+          />
+        </Stack>
+      )}
+    </>
   );
-}
+};
 
-const mapStateToProps = (state: StoreState) => ({
-  navModel: getNavModel(state.navIndex, 'server-stats'),
-  getServerStats: getServerStats,
-});
+const getAnonymousStatsContent = (stats: ServerStat | null, config: GrafanaBootConfig) => {
+  if (!config.anonymousEnabled || !stats?.activeDevices) {
+    return [];
+  }
+  if (!config.anonymousDeviceLimit) {
+    return [
+      {
+        name: 'Active anonymous devices',
+        value: `${stats.activeDevices}`,
+        tooltip: 'Detected devices that are not logged in, in last 30 days.',
+      },
+    ];
+  } else {
+    return [
+      {
+        name: 'Active anonymous devices',
+        value: `${stats.activeDevices} / ${config.anonymousDeviceLimit}`,
+        tooltip: 'Detected devices that are not logged in, in last 30 days.',
+        highlight: stats.activeDevices > config.anonymousDeviceLimit,
+      },
+    ];
+  }
+};
 
-export default hot(module)(connect(mapStateToProps)(ServerStats));
+const getStyles = (theme: GrafanaTheme2) => {
+  return {
+    title: css({
+      marginBottom: theme.spacing(4),
+    }),
+    notFound: css({
+      fontSize: theme.typography.h6.fontSize,
+      textAlign: 'center',
+      height: '290px',
+    }),
+  };
+};

@@ -1,22 +1,32 @@
-import React, { PureComponent } from 'react';
-import { Select, FieldSet, InlineField, Alert } from '@grafana/ui';
-import { DataSourcePluginOptionsEditorProps, onUpdateDatasourceJsonDataOptionSelect } from '@grafana/data';
-import { AuthType, authTypes, CloudMonitoringOptions, CloudMonitoringSecureJsonData } from '../../types';
-import { JWTConfig } from './JWTConfig';
+import { PureComponent } from 'react';
+
+import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
+import { ConnectionConfig } from '@grafana/google-sdk';
+import { ConfigSection, DataSourceDescription } from '@grafana/plugin-ui';
+import { reportInteraction, config } from '@grafana/runtime';
+import { Divider, SecureSocksProxySettings } from '@grafana/ui';
+
+import { CloudMonitoringOptions, CloudMonitoringSecureJsonData } from '../../types/types';
 
 export type Props = DataSourcePluginOptionsEditorProps<CloudMonitoringOptions, CloudMonitoringSecureJsonData>;
 
 export class ConfigEditor extends PureComponent<Props> {
+  handleOnOptionsChange = (options: Props['options']) => {
+    if (options.jsonData.privateKeyPath || options.secureJsonFields['privateKey']) {
+      reportInteraction('grafana_cloud_monitoring_config_changed', {
+        authenticationType: 'JWT',
+        privateKey: options.secureJsonFields['privateKey'],
+        privateKeyPath: !!options.jsonData.privateKeyPath,
+      });
+    }
+    this.props.onOptionsChange(options);
+  };
+
   render() {
     const { options, onOptionsChange } = this.props;
-    const { secureJsonFields, jsonData } = options;
-
-    if (!jsonData.hasOwnProperty('authenticationType')) {
-      jsonData.authenticationType = AuthType.JWT;
-    }
-
     return (
       <>
+<<<<<<< HEAD
         <div className="gf-form-group">
           <div className="grafana-info-box">
             <h4>Google Cloud Monitoring Authentication</h4>
@@ -104,6 +114,27 @@ export class ConfigEditor extends PureComponent<Props> {
           <Alert title="" severity="info">
             Verify GCE default service account by clicking Save & Test
           </Alert>
+=======
+        <DataSourceDescription
+          dataSourceName="Google Cloud Monitoring"
+          docsLink="https://grafana.com/docs/grafana/latest/datasources/google-cloud-monitoring/"
+          hasRequiredFields
+        />
+        <Divider />
+        <ConnectionConfig {...this.props} onOptionsChange={this.handleOnOptionsChange}></ConnectionConfig>
+        {config.secureSocksDSProxyEnabled && (
+          <>
+            <Divider />
+            <ConfigSection
+              title="Additional settings"
+              description="Additional settings are optional settings that can be configured for more control over your data source. This includes Secure Socks Proxy."
+              isCollapsible={true}
+              isInitiallyOpen={options.jsonData.enableSecureSocksProxy !== undefined}
+            >
+              <SecureSocksProxySettings options={options} onOptionsChange={onOptionsChange} />
+            </ConfigSection>
+          </>
+>>>>>>> v12.1.0
         )}
       </>
     );

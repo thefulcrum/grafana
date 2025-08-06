@@ -1,17 +1,28 @@
-import { Checkbox, Field } from '@grafana/ui';
-import React, { FC } from 'react';
-import { CommonSettingsComponentProps } from '../../../types/receiver-form';
 import { useFormContext } from 'react-hook-form';
 
-export const CloudCommonChannelSettings: FC<CommonSettingsComponentProps> = ({ pathPrefix, className }) => {
+import { t } from '@grafana/i18n';
+import { Checkbox, Field } from '@grafana/ui';
+
+import { CommonSettingsComponentProps } from '../../../types/receiver-form';
+
+export const CloudCommonChannelSettings = ({
+  pathPrefix,
+  className,
+  readOnly = false,
+}: CommonSettingsComponentProps) => {
   const { register } = useFormContext();
+
   return (
     <div className={className}>
-      <Field>
+      <Field disabled={readOnly}>
         <Checkbox
           {...register(`${pathPrefix}sendResolved`)}
-          label="Send resolved"
-          description="Whether or not to notify about resolved alerts."
+          label={t('alerting.cloud-common-channel-settings.label-send-resolved', 'Send resolved')}
+          disabled={readOnly}
+          description={t(
+            'alerting.cloud-common-channel-settings.description-whether-notify-about-resolved-alerts',
+            'Whether or not to notify about resolved alerts.'
+          )}
         />
       </Field>
     </div>

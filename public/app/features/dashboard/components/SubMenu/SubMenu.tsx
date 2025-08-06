@@ -1,5 +1,8 @@
-import React, { PureComponent } from 'react';
+import { css } from '@emotion/css';
+import { PureComponent } from 'react';
+import * as React from 'react';
 import { connect, MapStateToProps } from 'react-redux';
+<<<<<<< HEAD
 import { StoreState } from '../../../../types';
 import { getSubMenuVariables } from '../../../variables/state/selectors';
 import { VariableModel } from '../../../variables/types';
@@ -10,15 +13,30 @@ import { SubMenuItems } from './SubMenuItems';
 import { DashboardLink } from '../../state/DashboardModel';
 import { AnnotationQuery } from '@grafana/data';
 import { css } from '@emotion/css';
+=======
+>>>>>>> v12.1.0
 
-interface OwnProps {
+import { AnnotationQuery, DataQuery, TypedVariableModel, GrafanaTheme2 } from '@grafana/data';
+import { t } from '@grafana/i18n';
+import { DashboardLink } from '@grafana/schema';
+import { stylesFactory, Themeable2, withTheme2 } from '@grafana/ui';
+import { StoreState } from 'app/types/store';
+
+import { getSubMenuVariables, getVariablesState } from '../../../variables/state/selectors';
+import { DashboardModel } from '../../state/DashboardModel';
+
+import { Annotations } from './Annotations';
+import { DashboardLinks } from './DashboardLinks';
+import { SubMenuItems } from './SubMenuItems';
+
+interface OwnProps extends Themeable2 {
   dashboard: DashboardModel;
   links: DashboardLink[];
   annotations: AnnotationQuery[];
 }
 
 interface ConnectedProps {
-  variables: VariableModel[];
+  variables: TypedVariableModel[];
 }
 
 interface DispatchProps {}
@@ -26,7 +44,7 @@ interface DispatchProps {}
 type Props = OwnProps & ConnectedProps & DispatchProps;
 
 class SubMenuUnConnected extends PureComponent<Props> {
-  onAnnotationStateChanged = (updatedAnnotation: any) => {
+  onAnnotationStateChanged = (updatedAnnotation: AnnotationQuery<DataQuery>) => {
     // we're mutating dashboard state directly here until annotations are in Redux.
     for (let index = 0; index < this.props.dashboard.annotations.list.length; index++) {
       const annotation = this.props.dashboard.annotations.list[index];
@@ -39,37 +57,53 @@ class SubMenuUnConnected extends PureComponent<Props> {
     this.forceUpdate();
   };
 
-  render() {
-    const { dashboard, variables, links, annotations } = this.props;
+  disableSubmitOnEnter = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+  };
 
-    if (!dashboard.isSubMenuVisible()) {
-      return null;
-    }
+  render() {
+    const { dashboard, variables, links, annotations, theme } = this.props;
+
+    const styles = getStyles(theme);
+
+    const readOnlyVariables = dashboard.meta.isSnapshot ?? false;
 
     return (
+<<<<<<< HEAD
       <div className="submenu-controls">
         <form aria-label="Template variables" className={styles}>
           <SubMenuItems variables={variables} />
+=======
+      <div className={styles.submenu}>
+        <form
+          aria-label={t('dashboard.sub-menu-un-connected.aria-label-template-variables', 'Template variables')}
+          className={styles.formStyles}
+          onSubmit={this.disableSubmitOnEnter}
+        >
+          <SubMenuItems variables={variables} readOnly={readOnlyVariables} />
+>>>>>>> v12.1.0
         </form>
         <Annotations
           annotations={annotations}
           onAnnotationChanged={this.onAnnotationStateChanged}
           events={dashboard.events}
         />
-        <div className="gf-form gf-form--grow" />
+        <div className={styles.spacer} />
         {dashboard && <DashboardLinks dashboard={dashboard} links={links} />}
-        <div className="clearfix" />
       </div>
     );
   }
 }
 
-const mapStateToProps: MapStateToProps<ConnectedProps, OwnProps, StoreState> = (state) => {
+const mapStateToProps: MapStateToProps<ConnectedProps, OwnProps, StoreState> = (state, ownProps) => {
+  const { uid } = ownProps.dashboard;
+  const templatingState = getVariablesState(uid, state);
   return {
-    variables: getSubMenuVariables(state.templating.variables),
+    variables: getSubMenuVariables(uid, templatingState.variables),
   };
 };
 
+<<<<<<< HEAD
 const styles = css`
   display: flex;
   flex-wrap: wrap;
@@ -77,5 +111,29 @@ const styles = css`
 `;
 
 export const SubMenu = connect(mapStateToProps)(SubMenuUnConnected);
+=======
+const getStyles = stylesFactory((theme: GrafanaTheme2) => {
+  return {
+    formStyles: css({
+      display: 'contents',
+      flexWrap: 'wrap',
+    }),
+    submenu: css({
+      display: 'flex',
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignContent: 'flex-start',
+      alignItems: 'flex-start',
+      gap: `${theme.spacing(1)} ${theme.spacing(2)}`,
+      padding: `0 0 ${theme.spacing(1)} 0`,
+    }),
+    spacer: css({
+      flexGrow: 1,
+    }),
+  };
+});
+
+export const SubMenu = withTheme2(connect(mapStateToProps)(SubMenuUnConnected));
+>>>>>>> v12.1.0
 
 SubMenu.displayName = 'SubMenu';

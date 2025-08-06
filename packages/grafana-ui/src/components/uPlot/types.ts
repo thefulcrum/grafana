@@ -1,23 +1,27 @@
-import React from 'react';
+import * as React from 'react';
 import uPlot, { Options, AlignedData } from 'uplot';
-import { TimeRange } from '@grafana/data';
+
 import { UPlotConfigBuilder } from './config/UPlotConfigBuilder';
+
+/**
+ * @internal -- not a public API
+ */
+export const FIXED_UNIT = '__fixed';
 
 export type PlotConfig = Pick<
   Options,
-  'series' | 'scales' | 'axes' | 'cursor' | 'bands' | 'hooks' | 'select' | 'tzDate'
+  'mode' | 'series' | 'scales' | 'axes' | 'cursor' | 'bands' | 'hooks' | 'select' | 'tzDate' | 'padding'
 >;
 
-export interface PlotPluginProps {
-  id: string;
-}
+export type FacetValues = any[];
+export type FacetSeries = FacetValues[];
+export type FacetedData = [_: null, ...series: FacetSeries];
 
 export interface PlotProps {
-  data: AlignedData;
+  data: AlignedData | FacetedData;
   width: number;
   height: number;
   config: UPlotConfigBuilder;
-  timeRange: TimeRange;
   children?: React.ReactNode;
   // Reference to uPlot instance
   plotRef?: (u: uPlot) => void;

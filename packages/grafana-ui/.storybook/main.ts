@@ -1,16 +1,29 @@
-const path = require('path');
-const TerserPlugin = require('terser-webpack-plugin');
-const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
-const FilterWarningsPlugin = require('webpack-filter-warnings-plugin');
+import path, { dirname, join } from 'node:path';
+import type { StorybookConfig } from '@storybook/react-webpack5';
+import { copyAssetsSync } from './copyAssets';
 
-const stories = ['../src/**/*.story.{js,jsx,ts,tsx,mdx}'];
+const coreComponentsGlobs: StorybookConfig['stories'] = ['../src/Intro.mdx', '../src/**/*.story.tsx'];
 
-if (process.env.NODE_ENV !== 'production') {
-  stories.push('../src/**/*.story.internal.{js,jsx,ts,tsx,mdx}');
-}
+const alertingComponentsGlobs: StorybookConfig['stories'] = [
+  {
+    titlePrefix: 'Alerting',
+    directory: '../../grafana-alerting/src',
+    files: 'Intro.mdx',
+  },
+  {
+    titlePrefix: 'Alerting',
+    directory: '../../grafana-alerting/src',
+    files: process.env.NODE_ENV === 'production' ? '**/!(*.internal).story.tsx' : '**/*.story.tsx',
+  },
+];
 
-module.exports = {
-  stories: stories,
+const stories = [...coreComponentsGlobs, ...alertingComponentsGlobs];
+
+// Copy the assets required by storybook before starting the storybook server.
+copyAssetsSync();
+
+const mainConfig: StorybookConfig = {
+  stories,
   addons: [
     {
       name: '@storybook/addon-essentials',
@@ -18,14 +31,40 @@ module.exports = {
         backgrounds: false,
       },
     },
-    '@storybook/addon-a11y',
-    '@storybook/addon-knobs',
-    '@storybook/addon-storysource',
-    'storybook-dark-mode',
+    getAbsolutePath('@storybook/addon-a11y'),
+    {
+      name: '@storybook/preset-scss',
+      options: {
+        styleLoaderOptions: {
+          // this is required for theme switching .use() and .unuse()
+          injectType: 'lazyStyleTag',
+        },
+        cssLoaderOptions: {
+          url: false,
+          importLoaders: 2,
+        },
+        sassLoaderOptions: {
+          sassOptions: {
+            // silencing these warnings since we're planning to remove sass when angular is gone
+            silenceDeprecations: ['import', 'global-builtin'],
+          },
+        },
+      },
+    },
+    getAbsolutePath('@storybook/addon-storysource'),
+    getAbsolutePath('@storybook/addon-webpack5-compiler-swc'),
   ],
-  reactOptions: {
-    fastRefresh: true,
+  framework: {
+    name: getAbsolutePath('@storybook/react-webpack5'),
+    options: {
+      fastRefresh: true,
+      builder: {
+        fsCache: true,
+      },
+    },
   },
+  logLevel: 'debug',
+  staticDirs: ['static'],
   typescript: {
     check: true,
     reactDocgen: 'react-docgen-typescript',
@@ -33,111 +72,34 @@ module.exports = {
       tsconfigPath: path.resolve(__dirname, 'tsconfig.json'),
       shouldExtractLiteralValuesFromEnum: true,
       shouldRemoveUndefinedFromOptional: true,
-      propFilter: (prop: any) => (prop.parent ? !/node_modules/.test(prop.parent.fileName) : true),
+      propFilter: (prop) => (prop.parent ? !/node_modules/.test(prop.parent.fileName) : true),
       savePropValueAsString: true,
     },
   },
-  webpackFinal: async (config: any, { configType }: any) => {
-    const isProductionBuild = configType === 'PRODUCTION';
-    config.module.rules = [
-      ...(config.module.rules || []),
-      {
-        test: /\.tsx?$/,
-        use: [
-          {
-            loader: require.resolve('ts-loader'),
-            options: {
-              transpileOnly: true,
-              configFile: path.resolve(__dirname, 'tsconfig.json'),
-            },
-          },
-        ],
-      },
-      {
-        test: /\.scss$/,
-        use: [
-          {
-            loader: 'style-loader',
-            options: { injectType: 'lazyStyleTag' },
-          },
-          {
-            loader: 'css-loader',
-            options: {
-              importLoaders: 2,
-            },
-          },
-          {
-            loader: 'postcss-loader',
-            options: {
-              sourceMap: false,
-              config: { path: __dirname + '../../../../scripts/webpack/postcss.config.js' },
-            },
-          },
-          {
-            loader: 'sass-loader',
-            options: {
-              sourceMap: false,
-            },
-          },
-        ],
-      },
-      {
-        test: require.resolve('jquery'),
-        use: [
-          {
-            loader: 'expose-loader',
-            query: 'jQuery',
-          },
-          {
-            loader: 'expose-loader',
-            query: '$',
-          },
-        ],
-      },
-    ];
-
-    config.optimization = {
-      nodeEnv: 'production',
-      moduleIds: 'hashed',
-      runtimeChunk: 'single',
-      splitChunks: {
-        chunks: 'all',
-        minChunks: 1,
-        cacheGroups: {
-          vendors: {
-            test: /[\\/]node_modules[\\/].*[jt]sx?$/,
-            chunks: 'initial',
-            priority: -10,
-            reuseExistingChunk: true,
-            enforce: true,
-          },
-          default: {
-            priority: -20,
-            chunks: 'all',
-            test: /.*[jt]sx?$/,
-            reuseExistingChunk: true,
-          },
+  swc: () => ({
+    jsc: {
+      transform: {
+        react: {
+          runtime: 'automatic',
         },
       },
-      minimize: isProductionBuild,
-      minimizer: isProductionBuild
-        ? [
-            new TerserPlugin({ cache: false, parallel: false, sourceMap: false, exclude: /monaco/ }),
-            new OptimizeCSSAssetsPlugin({}),
-          ]
-        : [],
-    };
-
-    config.resolve.alias['@grafana/ui'] = path.resolve(__dirname, '..');
-
-    // Silence "export not found" webpack warnings with transpileOnly
-    // https://github.com/TypeStrong/ts-loader#transpileonly
-    config.plugins.push(
-      new FilterWarningsPlugin({
-        exclude: /export .* was not found in/,
-      })
-    );
+    },
+  }),
+  webpackFinal: async (config) => {
+    // expose jquery as a global so jquery plugins don't break at runtime.
+    config.module?.rules?.push({
+      test: require.resolve('jquery'),
+      loader: 'expose-loader',
+      options: {
+        exposes: ['$', 'jQuery'],
+      },
+    });
 
     return config;
   },
 };
+module.exports = mainConfig;
+
+function getAbsolutePath(value: string): any {
+  return dirname(require.resolve(join(value, 'package.json')));
+}

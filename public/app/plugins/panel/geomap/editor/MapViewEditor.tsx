@@ -1,17 +1,22 @@
-import React, { FC, useMemo, useCallback } from 'react';
-import { StandardEditorProps, SelectableValue } from '@grafana/data';
-import { Button, InlineField, InlineFieldRow, Select, VerticalGroup } from '@grafana/ui';
-import { GeomapPanelOptions, MapViewConfig } from '../types';
-import { centerPointRegistry, MapCenterID } from '../view';
-import { NumberInput } from '../components/NumberInput';
-import { lastGeomapPanelInstance } from '../GeomapPanel';
 import { toLonLat } from 'ol/proj';
+import { useMemo, useCallback } from 'react';
 
-export const MapViewEditor: FC<StandardEditorProps<MapViewConfig, any, GeomapPanelOptions>> = ({
+import { StandardEditorProps, SelectableValue } from '@grafana/data';
+import { Trans, t } from '@grafana/i18n';
+import { Button, InlineField, InlineFieldRow, Select, VerticalGroup } from '@grafana/ui';
+import { NumberInput } from 'app/core/components/OptionsUI/NumberInput';
+
+import { Options, MapViewConfig, GeomapInstanceState } from '../types';
+import { centerPointRegistry, MapCenterID } from '../view';
+
+import { CoordinatesMapViewEditor } from './CoordinatesMapViewEditor';
+import { FitMapViewEditor } from './FitMapViewEditor';
+
+export const MapViewEditor = ({
   value,
   onChange,
   context,
-}) => {
+}: StandardEditorProps<MapViewConfig, unknown, Options, GeomapInstanceState>) => {
   const labelWidth = 10;
 
   const views = useMemo(() => {
@@ -25,7 +30,7 @@ export const MapViewEditor: FC<StandardEditorProps<MapViewConfig, any, GeomapPan
   }, [value?.id]);
 
   const onSetCurrentView = useCallback(() => {
-    const map = lastGeomapPanelInstance?.map;
+    const map = context.instanceState?.map;
     if (map) {
       const view = map.getView();
       const coords = view.getCenter();
@@ -40,7 +45,7 @@ export const MapViewEditor: FC<StandardEditorProps<MapViewConfig, any, GeomapPan
         });
       }
     }
-  }, [value, onChange]);
+  }, [value, onChange, context.instanceState]);
 
   const onSelectView = useCallback(
     (selection: SelectableValue<string>) => {
@@ -49,9 +54,9 @@ export const MapViewEditor: FC<StandardEditorProps<MapViewConfig, any, GeomapPan
         onChange({
           ...value,
           id: v.id,
-          lat: v.lat ?? value.lat,
-          lon: v.lon ?? value.lon,
-          zoom: v.zoom ?? value.zoom,
+          lat: v.lat ?? value?.lat,
+          lon: v.lon ?? value?.lon,
+          zoom: v.zoom ?? value?.zoom,
         });
       }
     },
@@ -61,45 +66,34 @@ export const MapViewEditor: FC<StandardEditorProps<MapViewConfig, any, GeomapPan
   return (
     <>
       <InlineFieldRow>
+<<<<<<< HEAD
         <InlineField label="View" labelWidth={labelWidth} grow={true}>
           <Select menuShouldPortal options={views.options} value={views.current} onChange={onSelectView} />
+=======
+        <InlineField label={t('geomap.map-view-editor.label-view', 'View')} labelWidth={labelWidth} grow={true}>
+          <Select options={views.options} value={views.current} onChange={onSelectView} />
+>>>>>>> v12.1.0
         </InlineField>
       </InlineFieldRow>
-      {value?.id === MapCenterID.Coordinates && (
-        <>
-          <InlineFieldRow>
-            <InlineField label="Latitude" labelWidth={labelWidth} grow={true}>
-              <NumberInput
-                value={value.lat}
-                min={-90}
-                max={90}
-                step={0.001}
-                onChange={(v) => {
-                  onChange({ ...value, lat: v });
-                }}
-              />
-            </InlineField>
-          </InlineFieldRow>
-          <InlineFieldRow>
-            <InlineField label="Longitude" labelWidth={labelWidth} grow={true}>
-              <NumberInput
-                value={value.lon}
-                min={-180}
-                max={180}
-                step={0.001}
-                onChange={(v) => {
-                  onChange({ ...value, lon: v });
-                }}
-              />
-            </InlineField>
-          </InlineFieldRow>
-        </>
+      {value.id === MapCenterID.Coordinates && (
+        <CoordinatesMapViewEditor labelWidth={labelWidth} value={value} onChange={onChange} />
+      )}
+      {value.id === MapCenterID.Fit && (
+        <FitMapViewEditor labelWidth={labelWidth} value={value} onChange={onChange} context={context} />
       )}
 
       <InlineFieldRow>
-        <InlineField label="Zoom" labelWidth={labelWidth} grow={true}>
+        <InlineField
+          label={
+            value?.id === MapCenterID.Fit
+              ? t('geomap.map-view-editor.label-max-zoom', 'Max Zoom')
+              : t('geomap.map-view-editor.label-zoom', 'Zoom')
+          }
+          labelWidth={labelWidth}
+          grow={true}
+        >
           <NumberInput
-            value={value.zoom ?? 1}
+            value={value?.zoom ?? 1}
             min={1}
             max={18}
             step={0.01}
@@ -112,7 +106,9 @@ export const MapViewEditor: FC<StandardEditorProps<MapViewConfig, any, GeomapPan
 
       <VerticalGroup>
         <Button variant="secondary" size="sm" fullWidth onClick={onSetCurrentView}>
-          <span>Use current map settings</span>
+          <span>
+            <Trans i18nKey="geomap.map-view-editor.use-current-map-settings">Use current map settings</Trans>
+          </span>
         </Button>
       </VerticalGroup>
     </>

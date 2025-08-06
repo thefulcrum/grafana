@@ -1,19 +1,16 @@
-import React, { FC, useState } from 'react';
+import { forwardRef, useState } from 'react';
+
 import { selectors } from '@grafana/e2e-selectors';
-
+import { t } from '@grafana/i18n';
 import { Input, IconButton } from '@grafana/ui';
+import { InputProps } from '@grafana/ui/internal';
 
-export interface Props {
-  autoFocus?: boolean;
-  autoComplete?: string;
-  id?: string;
-  passwordHint?: string;
-}
+interface Props extends Omit<InputProps, 'type'> {}
 
-export const PasswordField: FC<Props> = React.forwardRef<HTMLInputElement, Props>(
-  ({ autoComplete, autoFocus, id, passwordHint, ...props }, ref) => {
-    const [showPassword, setShowPassword] = useState(false);
+export const PasswordField = forwardRef<HTMLInputElement, Props>((props, ref) => {
+  const [showPassword, setShowPassword] = useState(false);
 
+<<<<<<< HEAD
     return (
       <Input
         id={id}
@@ -41,5 +38,32 @@ export const PasswordField: FC<Props> = React.forwardRef<HTMLInputElement, Props
     );
   }
 );
+=======
+  return (
+    <Input
+      {...props}
+      type={showPassword ? 'text' : 'password'}
+      data-testid={selectors.pages.Login.password}
+      ref={ref}
+      suffix={
+        <IconButton
+          name={showPassword ? 'eye-slash' : 'eye'}
+          aria-controls={props.id}
+          role="switch"
+          aria-checked={showPassword}
+          onClick={() => {
+            setShowPassword(!showPassword);
+          }}
+          tooltip={
+            showPassword
+              ? t('grafana-ui.password-field.tooltip-hide', 'Hide password')
+              : t('grafana-ui.password-field.tooltip-show', 'Show password')
+          }
+        />
+      }
+    />
+  );
+});
+>>>>>>> v12.1.0
 
 PasswordField.displayName = 'PasswordField';

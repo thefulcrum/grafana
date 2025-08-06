@@ -1,22 +1,22 @@
-export enum OrgRole {
-  Viewer = 'Viewer',
-  Editor = 'Editor',
+export enum TeamPermissionLevel {
+  Admin = 4,
+  Member = 0,
+}
+
+export type PermissionLevel = 'view' | 'edit' | 'admin';
+
+/** @deprecated Use PermissionLevel instead */
+export enum PermissionLevelString {
+  View = 'View',
+  Edit = 'Edit',
   Admin = 'Admin',
 }
 
-export interface DashboardAclDTO {
-  id?: number;
-  dashboardId?: number;
-  userId?: number;
-  userLogin?: string;
-  userEmail?: string;
-  teamId?: number;
-  team?: string;
-  permission?: PermissionLevel;
-  role?: OrgRole;
-  icon?: string;
-  inherited?: boolean;
+export enum SearchQueryType {
+  Folder = 'dash-folder',
+  Dashboard = 'dash-db',
 }
+<<<<<<< HEAD
 
 export interface DashboardAclUpdateDTO {
   userId?: number;
@@ -130,3 +130,5 @@ export const teamsPermissionLevels: TeamPermissionInfo[] = [
     description: 'Can add/remove permissions, members and delete team.',
   },
 ];
+=======
+>>>>>>> v12.1.0

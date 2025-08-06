@@ -1,7 +1,9 @@
-import React from 'react';
+import { PureComponent } from 'react';
+
 import { ListProps, AbstractList } from './AbstractList';
 
-export class InlineList<T> extends React.PureComponent<ListProps<T>> {
+/** @deprecated Use ul/li/arr.map directly instead */
+export class InlineList<T> extends PureComponent<ListProps<T>> {
   render() {
     return <AbstractList inline {...this.props} />;
   }

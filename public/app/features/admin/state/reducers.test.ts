@@ -1,4 +1,8 @@
 import { reducerTester } from 'test/core/redux/reducerTester';
+
+import { LdapState, LdapUser } from 'app/types/ldap';
+import { UserAdminState, UserListAdminState, UserDTO } from 'app/types/user';
+
 import {
   clearUserMappingInfoAction,
   ldapConnectionInfoLoadedAction,
@@ -12,8 +16,8 @@ import {
   userSessionsLoadedAction,
   userListAdminReducer,
   queryChanged,
+  filterChanged,
 } from './reducers';
-import { LdapState, LdapUser, UserAdminState, UserDTO, UserListAdminState } from 'app/types';
 
 const makeInitialLdapState = (): LdapState => ({
   connectionInfo: [],
@@ -32,6 +36,8 @@ const makeInitialUserListAdminState = (): UserListAdminState => ({
   perPage: 50,
   totalPages: 1,
   showPaging: false,
+  filters: [{ name: 'activeLast30Days', value: true }],
+  isLoading: false,
 });
 
 const getTestUserMapping = (): LdapUser => ({
@@ -51,6 +57,7 @@ const getTestUserMapping = (): LdapUser => ({
 
 const getTestUser = (): UserDTO => ({
   id: 1,
+  uid: 'aaaaaa',
   email: 'user@localhost',
   login: 'user',
   name: 'User',
@@ -75,7 +82,7 @@ describe('LDAP page reducer', () => {
                 available: true,
                 host: 'localhost',
                 port: 389,
-                error: (null as unknown) as string,
+                error: null as unknown as string,
               },
             ])
           )
@@ -86,7 +93,7 @@ describe('LDAP page reducer', () => {
                 available: true,
                 host: 'localhost',
                 port: 389,
-                error: (null as unknown) as string,
+                error: null as unknown as string,
               },
             ],
             ldapError: undefined,
@@ -282,6 +289,24 @@ describe('User List Admin reducer', () => {
           ...makeInitialUserListAdminState(),
           query: 'test',
           page: 0,
+        });
+    });
+  });
+
+  describe('When filter changed', () => {
+    it('should reset page to 0', () => {
+      const initialState = {
+        ...makeInitialUserListAdminState(),
+        page: 3,
+      };
+
+      reducerTester<UserListAdminState>()
+        .givenReducer(userListAdminReducer, initialState)
+        .whenActionIsDispatched(filterChanged({ test: true }))
+        .thenStateShouldEqual({
+          ...makeInitialUserListAdminState(),
+          page: 0,
+          filters: expect.arrayContaining([{ test: true }]),
         });
     });
   });

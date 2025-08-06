@@ -1,9 +1,28 @@
-import { includes, isDate } from 'lodash';
-import { DateTime, dateTime, dateTimeForTimeZone, ISO_8601, isDateTime, DurationUnit } from './moment_wrapper';
-import { TimeZone } from '../types/index';
+import { isDate } from 'lodash';
 
-const units: DurationUnit[] = ['y', 'M', 'w', 'd', 'h', 'm', 's'];
+import { TimeZone } from '@grafana/schema';
 
+import {
+  DateTime,
+  dateTime,
+  dateTimeAsMoment,
+  dateTimeForTimeZone,
+  DateTimeInput,
+  DurationUnit,
+  isDateTime,
+  ISO_8601,
+} from './moment_wrapper';
+
+const units: string[] = ['y', 'M', 'w', 'd', 'h', 'm', 's', 'Q'] satisfies DurationUnit[];
+
+const isDurationUnit = (value: string): value is DurationUnit => {
+  return units.includes(value);
+};
+
+/**
+ * Determine if a string contains a relative date time.
+ * @param text
+ */
 export function isMathString(text: string | DateTime | Date): boolean {
   if (!text) {
     return false;
@@ -17,6 +36,7 @@ export function isMathString(text: string | DateTime | Date): boolean {
 }
 
 /**
+ * @deprecated use toDateTime instead
  * Parses different types input to a moment instance. There is a specific formatting language that can be used
  * if text arg is string. See unit tests for examples.
  * @param text
@@ -26,38 +46,68 @@ export function isMathString(text: string | DateTime | Date): boolean {
 export function parse(
   text?: string | DateTime | Date | null,
   roundUp?: boolean,
-  timezone?: TimeZone
+  timezone?: TimeZone,
+  fiscalYearStartMonth?: number
 ): DateTime | undefined {
   if (!text) {
     return undefined;
   }
+  return toDateTime(text, { roundUp, timezone, fiscalYearStartMonth });
+}
 
-  if (typeof text !== 'string') {
-    if (isDateTime(text)) {
-      return text;
+export interface ConversionOptions {
+  /**
+   * Set the time to endOf time unit, otherwise to startOf time unit.
+   */
+  roundUp?: boolean;
+  /**
+   * Only string 'utc' is acceptable here, for anything else, local timezone is used.
+   */
+  timezone?: TimeZone;
+  /**
+   * Setting for which month is the first month of the fiscal year.
+   */
+  fiscalYearStartMonth?: number;
+  /**
+   * DateTimeInput to use as now. Useful when parsing multiple values and now needs to be the same. Without this, comparing results from subsequent parses is not guaranteed to be deterministic.
+   */
+  now?: DateTimeInput;
+}
+
+/**
+ * @param dateTimeRep A DateTime object, a Date object or a string representation of a specific time.
+ * @param options Options for converting to DateTime
+ * @returns A DateTime object if possible, undefined if not.
+ */
+export function toDateTime(dateTimeRep: string | DateTime | Date, options: ConversionOptions): DateTime | undefined {
+  if (typeof dateTimeRep !== 'string') {
+    if (isDateTime(dateTimeRep)) {
+      return dateTimeRep;
     }
-    if (isDate(text)) {
-      return dateTime(text);
+
+    if (isDate(dateTimeRep)) {
+      return dateTime(dateTimeRep);
     }
+
     // We got some non string which is not a moment nor Date. TS should be able to check for that but not always.
     return undefined;
   } else {
-    let time;
+    let time: DateTime;
     let mathString = '';
-    let index;
-    let parseString;
+    let index = -1;
+    let parseString = '';
 
-    if (text.substring(0, 3) === 'now') {
-      time = dateTimeForTimeZone(timezone);
-      mathString = text.substring('now'.length);
+    if (dateTimeRep.substring(0, 3) === 'now') {
+      time = dateTimeForTimeZone(options.timezone, options.now);
+      mathString = dateTimeRep.substring('now'.length);
     } else {
-      index = text.indexOf('||');
+      index = dateTimeRep.indexOf('||');
       if (index === -1) {
-        parseString = text;
+        parseString = dateTimeRep;
         mathString = ''; // nothing else
       } else {
-        parseString = text.substring(0, index);
-        mathString = text.substring(index + 2);
+        parseString = dateTimeRep.substring(0, index);
+        mathString = dateTimeRep.substring(index + 2);
       }
       // We're going to just require ISO8601 timestamps, k?
       time = dateTime(parseString, ISO_8601);
@@ -67,7 +117,7 @@ export function parse(
       return time;
     }
 
-    return parseDateMath(mathString, time, roundUp);
+    return parseDateMath(mathString, time, options.roundUp, options.fiscalYearStartMonth);
   }
 }
 
@@ -95,10 +145,14 @@ export function isValid(text: string | DateTime): boolean {
  * @param time
  * @param roundUp If true it will round the time to endOf time unit, otherwise to startOf time unit.
  */
-// TODO: Had to revert Andrejs `time: moment.Moment` to `time: any`
-export function parseDateMath(mathString: string, time: any, roundUp?: boolean): DateTime | undefined {
+export function parseDateMath(
+  mathString: string,
+  time: DateTime,
+  roundUp?: boolean,
+  fiscalYearStartMonth = 0
+): DateTime | undefined {
   const strippedMathString = mathString.replace(/\s/g, '');
-  const dateTime = time;
+  const result = dateTime(time);
   let i = 0;
   const len = strippedMathString.length;
 
@@ -106,7 +160,8 @@ export function parseDateMath(mathString: string, time: any, roundUp?: boolean):
     const c = strippedMathString.charAt(i++);
     let type;
     let num;
-    let unit;
+    let unitString: string;
+    let isFiscal = false;
 
     if (c === '/') {
       type = 0;
@@ -121,7 +176,7 @@ export function parseDateMath(mathString: string, time: any, roundUp?: boolean):
     if (isNaN(parseInt(strippedMathString.charAt(i), 10))) {
       num = 1;
     } else if (strippedMathString.length === 2) {
-      num = strippedMathString.charAt(i);
+      num = parseInt(strippedMathString.charAt(i), 10);
     } else {
       const numFrom = i;
       while (!isNaN(parseInt(strippedMathString.charAt(i), 10))) {
@@ -139,23 +194,57 @@ export function parseDateMath(mathString: string, time: any, roundUp?: boolean):
         return undefined;
       }
     }
-    unit = strippedMathString.charAt(i++);
 
-    if (!includes(units, unit)) {
-      return undefined;
-    } else {
+    unitString = strippedMathString.charAt(i++);
+
+    if (unitString === 'f') {
+      unitString = strippedMathString.charAt(i++);
+      isFiscal = true;
+    }
+
+    const unit = unitString;
+
+    if (isDurationUnit(unit)) {
       if (type === 0) {
-        if (roundUp) {
-          dateTime.endOf(unit);
+        if (isFiscal) {
+          roundToFiscal(fiscalYearStartMonth, result, unit, roundUp);
         } else {
-          dateTime.startOf(unit);
+          if (roundUp) {
+            result.endOf(unit);
+          } else {
+            result.startOf(unit);
+          }
         }
       } else if (type === 1) {
-        dateTime.add(num, unit);
+        result.add(num, unit);
       } else if (type === 2) {
-        dateTime.subtract(num, unit);
+        result.subtract(num, unit);
       }
+    } else {
+      return undefined;
     }
   }
-  return dateTime;
+  return result;
+}
+
+export function roundToFiscal(fyStartMonth: number, dateTime: DateTime, unit: string, roundUp: boolean | undefined) {
+  switch (unit) {
+    case 'y':
+      if (roundUp) {
+        roundToFiscal(fyStartMonth, dateTime, unit, false)?.add(11, 'M').endOf('M');
+      } else {
+        dateTime.subtract((dateTimeAsMoment(dateTime).month() - fyStartMonth + 12) % 12, 'M').startOf('M');
+      }
+      return dateTime;
+    case 'Q':
+      if (roundUp) {
+        roundToFiscal(fyStartMonth, dateTime, unit, false)?.add(2, 'M').endOf('M');
+      } else {
+        // why + 12? to ensure this number is always a positive offset from fyStartMonth
+        dateTime.subtract((dateTimeAsMoment(dateTime).month() - fyStartMonth + 12) % 3, 'M').startOf('M');
+      }
+      return dateTime;
+    default:
+      return undefined;
+  }
 }

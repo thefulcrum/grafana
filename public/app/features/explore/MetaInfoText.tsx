@@ -1,36 +1,37 @@
-import React, { memo } from 'react';
 import { css } from '@emotion/css';
-import { GrafanaTheme } from '@grafana/data';
-import { useStyles } from '@grafana/ui';
+import { memo } from 'react';
 
-const getStyles = (theme: GrafanaTheme) => ({
-  metaContainer: css`
-    flex: 1;
-    color: ${theme.colors.textWeak};
-    margin-bottom: ${theme.spacing.d};
-    min-width: 30%;
-    display: flex;
-    flex-wrap: wrap;
-  `,
-  metaItem: css`
-    margin-right: ${theme.spacing.d};
-    margin-top: ${theme.spacing.xs};
-    display: flex;
-    align-items: baseline;
+import { GrafanaTheme2 } from '@grafana/data';
+import { useStyles2 } from '@grafana/ui';
 
-    .logs-meta-item__error {
-      color: ${theme.palette.red};
-    }
-  `,
-  metaLabel: css`
-    margin-right: calc(${theme.spacing.d} / 2);
-    font-size: ${theme.typography.size.sm};
-    font-weight: ${theme.typography.weight.semibold};
-  `,
-  metaValue: css`
-    font-family: ${theme.typography.fontFamily.monospace};
-    font-size: ${theme.typography.size.sm};
-  `,
+const getStyles = (theme: GrafanaTheme2) => ({
+  metaContainer: css({
+    flex: 1,
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing(2),
+    minWidth: '30%',
+    display: 'flex',
+    flexWrap: 'wrap',
+  }),
+  metaItem: css({
+    marginRight: theme.spacing(2),
+    marginTop: theme.spacing(0.5),
+    display: 'flex',
+    alignItems: 'center',
+    ['.logs-meta-item__error']: {
+      color: theme.colors.error.text,
+    },
+  }),
+  metaLabel: css({
+    marginRight: `calc(${theme.spacing(2)} / 2)`,
+    fontSize: theme.typography.bodySmall.fontSize,
+    fontWeight: theme.typography.fontWeightMedium,
+    whiteSpace: 'nowrap',
+  }),
+  metaValue: css({
+    fontFamily: theme.typography.fontFamilyMonospace,
+    fontSize: theme.typography.bodySmall.fontSize,
+  }),
 });
 
 export interface MetaItemProps {
@@ -38,33 +39,31 @@ export interface MetaItemProps {
   value: string | JSX.Element;
 }
 
-export const MetaInfoItem = memo(function MetaInfoItem(props: MetaItemProps) {
-  const style = useStyles(getStyles);
+const MetaInfoItem = memo(function MetaInfoItem(props: MetaItemProps) {
+  const style = useStyles2(getStyles);
   const { label, value } = props;
 
   return (
-    <div className={style.metaItem}>
+    <div data-testid="meta-info-text-item" className={style.metaItem}>
       {label && <span className={style.metaLabel}>{label}:</span>}
       <span className={style.metaValue}>{value}</span>
     </div>
   );
 });
 
-export interface MetaInfoTextProps {
+interface MetaInfoTextProps {
   metaItems: MetaItemProps[];
 }
 
 export const MetaInfoText = memo(function MetaInfoText(props: MetaInfoTextProps) {
-  const style = useStyles(getStyles);
+  const style = useStyles2(getStyles);
   const { metaItems } = props;
 
   return (
-    <div className={style.metaContainer}>
+    <div className={style.metaContainer} data-testid="meta-info-text">
       {metaItems.map((item, index) => (
         <MetaInfoItem key={`${index}-${item.label}`} label={item.label} value={item.value} />
       ))}
     </div>
   );
 });
-
-export default MetaInfoText;

@@ -1,13 +1,21 @@
+<<<<<<< HEAD
 // Libraries
 import React, { PureComponent } from 'react';
 // Types
 import { AnnoOptions } from './types';
+=======
+import { css } from '@emotion/css';
+import { createRef, PureComponent } from 'react';
+import { Subscription } from 'rxjs';
+
+>>>>>>> v12.1.0
 import {
   AnnotationChangeEvent,
   AnnotationEvent,
   AppEvents,
   dateTime,
   DurationUnit,
+<<<<<<< HEAD
   GrafanaTheme,
   locationUtil,
   PanelProps,
@@ -15,12 +23,28 @@ import {
 import { config, getBackendSrv, locationService } from '@grafana/runtime';
 import { AbstractList } from '@grafana/ui/src/components/List/AbstractList';
 import { getDashboardSrv } from 'app/features/dashboard/services/DashboardSrv';
+=======
+  GrafanaTheme2,
+  locationUtil,
+  PanelProps,
+} from '@grafana/data';
+import { Trans, t } from '@grafana/i18n';
+import { config, getBackendSrv, locationService } from '@grafana/runtime';
+import { Button, ScrollContainer, stylesFactory, TagList } from '@grafana/ui';
+import { AbstractList } from '@grafana/ui/internal';
+>>>>>>> v12.1.0
 import appEvents from 'app/core/app_events';
+import { getDashboardSrv } from 'app/features/dashboard/services/DashboardSrv';
+
 import { AnnotationListItem } from './AnnotationListItem';
+<<<<<<< HEAD
 import { AnnotationListItemTags } from './AnnotationListItemTags';
 import { CustomScrollbar, stylesFactory } from '@grafana/ui';
 import { css } from '@emotion/css';
 import { Subscription } from 'rxjs';
+=======
+import { Options } from './panelcfg.gen';
+>>>>>>> v12.1.0
 
 interface UserInfo {
   id?: number;
@@ -28,7 +52,7 @@ interface UserInfo {
   email?: string;
 }
 
-export interface Props extends PanelProps<AnnoOptions> {}
+export interface Props extends PanelProps<Options> {}
 interface State {
   annotations: AnnotationEvent[];
   timeInfo: string;
@@ -37,8 +61,14 @@ interface State {
   queryTags: string[];
 }
 export class AnnoListPanel extends PureComponent<Props, State> {
+<<<<<<< HEAD
   style = getStyles(config.theme);
   subs = new Subscription();
+=======
+  style = getStyles(config.theme2);
+  subs = new Subscription();
+  tagListRef = createRef<HTMLUListElement>();
+>>>>>>> v12.1.0
 
   constructor(props: Props) {
     super(props);
@@ -74,6 +104,10 @@ export class AnnoListPanel extends PureComponent<Props, State> {
       options !== prevProps.options ||
       this.state.queryTags !== prevState.queryTags ||
       this.state.queryUser !== prevState.queryUser ||
+<<<<<<< HEAD
+=======
+      prevProps.renderCounter !== this.props.renderCounter ||
+>>>>>>> v12.1.0
       (options.onlyInTimeRange && timeRange !== prevProps.timeRange);
 
     if (needsQuery) {
@@ -89,14 +123,18 @@ export class AnnoListPanel extends PureComponent<Props, State> {
     const { options } = this.props;
     const { queryUser, queryTags } = this.state;
 
-    const params: any = {
+    const params: {
+      tags: typeof options.tags;
+      limit: typeof options.limit;
+      type: string;
+    } & Record<string, unknown> = {
       tags: options.tags,
       limit: options.limit,
       type: 'annotation', // Skip the Annotations that are really alerts.  (Use the alerts panel!)
     };
 
     if (options.onlyFromThisDashboard) {
-      params.dashboardId = getDashboardSrv().getCurrent()?.id;
+      params.dashboardUID = getDashboardSrv().getCurrent()?.uid;
     }
 
     let timeInfo = '';
@@ -113,7 +151,7 @@ export class AnnoListPanel extends PureComponent<Props, State> {
     }
 
     if (options.tags && options.tags.length) {
-      params.tags = options.tags;
+      params.tags = options.tags.map((tag) => this.props.replaceVariables(tag));
     }
 
     if (queryTags.length) {
@@ -129,7 +167,7 @@ export class AnnoListPanel extends PureComponent<Props, State> {
     });
   }
 
-  onAnnoClick = (anno: AnnotationEvent) => {
+  onAnnoClick = async (anno: AnnotationEvent) => {
     if (!anno.time) {
       return;
     }
@@ -138,31 +176,30 @@ export class AnnoListPanel extends PureComponent<Props, State> {
     const dashboardSrv = getDashboardSrv();
     const current = dashboardSrv.getCurrent();
 
-    const params: any = {
+    const params = {
       from: this._timeOffset(anno.time, options.navigateBefore, true),
       to: this._timeOffset(anno.timeEnd ?? anno.time, options.navigateAfter, false),
+<<<<<<< HEAD
+=======
+      viewPanel: options.navigateToPanel && anno.panelId ? anno.panelId : undefined,
+>>>>>>> v12.1.0
     };
 
-    if (options.navigateToPanel) {
-      params.viewPanel = anno.panelId;
-    }
-
-    if (current?.id === anno.dashboardId) {
+    if (!anno.dashboardUID || current?.uid === anno.dashboardUID) {
       locationService.partial(params);
       return;
     }
 
-    getBackendSrv()
-      .get('/api/search', { dashboardIds: anno.dashboardId })
-      .then((res: any[]) => {
-        if (res && res.length && res[0].id === anno.dashboardId) {
-          const dash = res[0];
-          const newUrl = locationUtil.stripBaseFromUrl(dash.url);
-          locationService.push(newUrl);
-          return;
-        }
-        appEvents.emit(AppEvents.alertWarning, ['Unknown Dashboard: ' + anno.dashboardId]);
-      });
+    const result = await getBackendSrv().get('/api/search', { dashboardUIDs: anno.dashboardUID });
+    if (result && result.length && result[0].uid === anno.dashboardUID) {
+      const dash = result[0];
+      const url = new URL(dash.url, window.location.origin);
+      url.searchParams.set('from', String(params.from));
+      url.searchParams.set('to', String(params.to));
+      locationService.push(locationUtil.stripBaseFromUrl(url.toString()));
+      return;
+    }
+    appEvents.emit(AppEvents.alertWarning, ['Unknown Dashboard: ' + anno.dashboardUID]);
   };
 
   _timeOffset(time: number, offset: string, subtract = false): number {
@@ -182,9 +219,30 @@ export class AnnoListPanel extends PureComponent<Props, State> {
   }
 
   onTagClick = (tag: string, remove?: boolean) => {
+    if (!remove && this.state.queryTags.includes(tag)) {
+      return;
+    }
+
     const queryTags = remove ? this.state.queryTags.filter((item) => item !== tag) : [...this.state.queryTags, tag];
 
-    this.setState({ queryTags });
+    // Logic to ensure keyboard focus isn't lost when the currently
+    // focused tag is removed
+    let nextTag: HTMLElement | undefined = undefined;
+    if (remove) {
+      const focusedTag = document.activeElement;
+      const dataTagId = focusedTag?.getAttribute('data-tag-id');
+      if (this.tagListRef.current?.contains(focusedTag) && dataTagId) {
+        const parsedTagId = Number.parseInt(dataTagId, 10);
+        const possibleNextTag =
+          this.tagListRef.current.querySelector(`[data-tag-id="${parsedTagId + 1}"]`) ??
+          this.tagListRef.current.querySelector(`[data-tag-id="${parsedTagId - 1}"]`);
+        if (possibleNextTag instanceof HTMLElement) {
+          nextTag = possibleNextTag;
+        }
+      }
+    }
+
+    this.setState({ queryTags }, () => nextTag?.focus());
   };
 
   onUserClick = (anno: AnnotationEvent) => {
@@ -201,10 +259,6 @@ export class AnnoListPanel extends PureComponent<Props, State> {
     this.setState({
       queryUser: undefined,
     });
-  };
-
-  renderTags = (tags?: string[], remove?: boolean): JSX.Element | null => {
-    return <AnnotationListItemTags tags={tags} remove={remove} onClick={this.onTagClick} />;
   };
 
   renderItem = (anno: AnnotationEvent, index: number): JSX.Element => {
@@ -229,7 +283,11 @@ export class AnnoListPanel extends PureComponent<Props, State> {
   render() {
     const { loaded, annotations, queryUser, queryTags } = this.state;
     if (!loaded) {
-      return <div>loading...</div>;
+      return (
+        <div>
+          <Trans i18nKey="annolist.anno-list-panel.loading">Loading...</Trans>
+        </div>
+      );
     }
 
     // Previously we showed inidication that it covered all time
@@ -241,27 +299,57 @@ export class AnnoListPanel extends PureComponent<Props, State> {
 
     const hasFilter = queryUser || queryTags.length > 0;
     return (
-      <CustomScrollbar autoHeightMin="100%">
+      <ScrollContainer minHeight="100%">
         {hasFilter && (
-          <div>
-            <b>Filter: &nbsp; </b>
+          <div className={this.style.filter}>
+            <b>
+              <Trans i18nKey="annolist.anno-list-panel.filter">Filter:</Trans>
+            </b>
             {queryUser && (
-              <span onClick={this.onClearUser} className="pointer">
+              <Button
+                size="sm"
+                variant="secondary"
+                fill="text"
+                onClick={this.onClearUser}
+                aria-label={t(
+                  'annolist.anno-list-panel.aria-label-remove-filter',
+                  'Remove filter: {{filterToRemove}}',
+                  { filterToRemove: queryUser.email }
+                )}
+              >
                 {queryUser.email}
-              </span>
+              </Button>
             )}
-            {queryTags.length > 0 && this.renderTags(queryTags, true)}
+            {queryTags.length > 0 && (
+              <TagList
+                icon="times"
+                tags={queryTags}
+                onClick={(tag) => this.onTagClick(tag, true)}
+                getAriaLabel={(name) => `Remove ${name} tag`}
+                className={this.style.tagList}
+                ref={this.tagListRef}
+              />
+            )}
           </div>
         )}
 
+<<<<<<< HEAD
         {annotations.length < 1 && <div className={this.style.noneFound}>No Annotations Found</div>}
+=======
+        {annotations.length < 1 && (
+          <div className={this.style.noneFound}>
+            <Trans i18nKey="annolist.anno-list-panel.no-annotations-found">No annotations found</Trans>
+          </div>
+        )}
+>>>>>>> v12.1.0
 
         <AbstractList items={annotations} renderItem={this.renderItem} getItemKey={(item) => `${item.id}`} />
-      </CustomScrollbar>
+      </ScrollContainer>
     );
   }
 }
 
+<<<<<<< HEAD
 const getStyles = stylesFactory((theme: GrafanaTheme) => ({
   noneFound: css`
     display: flex;
@@ -270,4 +358,27 @@ const getStyles = stylesFactory((theme: GrafanaTheme) => ({
     width: 100%;
     height: calc(100% - 30px);
   `,
+=======
+const getStyles = stylesFactory((theme: GrafanaTheme2) => ({
+  noneFound: css({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: 'calc(100% - 30px)',
+  }),
+  filter: css({
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: theme.spacing(0.5),
+    padding: theme.spacing(0.5),
+  }),
+  tagList: css({
+    justifyContent: 'flex-start',
+    'li > button': {
+      paddingLeft: '3px',
+    },
+  }),
+>>>>>>> v12.1.0
 }));

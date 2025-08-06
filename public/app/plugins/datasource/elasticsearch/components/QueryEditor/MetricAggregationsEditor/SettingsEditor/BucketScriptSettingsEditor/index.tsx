@@ -1,21 +1,23 @@
-import React, { Fragment, useEffect } from 'react';
-import { Input, InlineLabel } from '@grafana/ui';
-import { MetricAggregationAction } from '../../state/types';
-import { changeMetricAttribute } from '../../state/actions';
 import { css } from '@emotion/css';
-import { AddRemove } from '../../../../AddRemove';
+import { uniqueId } from 'lodash';
+import { Fragment, useEffect } from 'react';
+
+import { Input, InlineLabel } from '@grafana/ui';
+import { BucketScript, MetricAggregation } from 'app/plugins/datasource/elasticsearch/dataquery.gen';
+
 import { useStatelessReducer, useDispatch } from '../../../../../hooks/useStatelessReducer';
+import { AddRemove } from '../../../../AddRemove';
 import { MetricPicker } from '../../../../MetricPicker';
-import { reducer } from './state/reducer';
+import { changeMetricAttribute } from '../../state/actions';
+import { SettingField } from '../SettingField';
+
 import {
   addPipelineVariable,
   removePipelineVariable,
   renamePipelineVariable,
   changePipelineVariableMetric,
 } from './state/actions';
-import { SettingField } from '../SettingField';
-import { BucketScript, MetricAggregation } from '../../aggregations';
-import { uniqueId } from 'lodash';
+import { reducer } from './state/reducer';
 
 interface Props {
   value: BucketScript;
@@ -23,10 +25,11 @@ interface Props {
 }
 
 export const BucketScriptSettingsEditor = ({ value, previousMetrics }: Props) => {
-  const upperStateDispatch = useDispatch<MetricAggregationAction<BucketScript>>();
+  const upperStateDispatch = useDispatch();
 
   const dispatch = useStatelessReducer(
-    (newState) => upperStateDispatch(changeMetricAttribute(value, 'pipelineVariables', newState)),
+    (newValue) =>
+      upperStateDispatch(changeMetricAttribute({ metric: value, attribute: 'pipelineVariables', newValue })),
     value.pipelineVariables,
     reducer
   );
@@ -42,18 +45,18 @@ export const BucketScriptSettingsEditor = ({ value, previousMetrics }: Props) =>
   return (
     <>
       <div
-        className={css`
-          display: flex;
-        `}
+        className={css({
+          display: 'flex',
+        })}
       >
         <InlineLabel width={16}>Variables</InlineLabel>
         <div
-          className={css`
-            display: grid;
-            grid-template-columns: 1fr auto;
-            row-gap: 4px;
-            margin-bottom: 4px;
-          `}
+          className={css({
+            display: 'grid',
+            gridTemplateColumns: '1fr auto',
+            rowGap: '4px',
+            marginBottom: '4px',
+          })}
         >
           {value.pipelineVariables!.map((pipelineVar, index) => (
             // index as a key doesn't work here since removing an element
@@ -65,19 +68,20 @@ export const BucketScriptSettingsEditor = ({ value, previousMetrics }: Props) =>
             // ensures the UI is in a correct state. We might want to optimize this if we see perf issue in the future.
             <Fragment key={uniqueId('es-bs-')}>
               <div
-                className={css`
-                  display: grid;
-                  column-gap: 4px;
-                  grid-template-columns: auto auto;
-                `}
+                className={css({
+                  display: 'grid',
+                  columnGap: '4px',
+                  gridTemplateColumns: 'auto auto',
+                })}
               >
                 <Input
+                  aria-label="Variable name"
                   defaultValue={pipelineVar.name}
                   placeholder="Variable Name"
-                  onBlur={(e) => dispatch(renamePipelineVariable(e.target.value, index))}
+                  onBlur={(e) => dispatch(renamePipelineVariable({ newName: e.target.value, index }))}
                 />
                 <MetricPicker
-                  onChange={(e) => dispatch(changePipelineVariableMetric(e.value!.id, index))}
+                  onChange={(e) => dispatch(changePipelineVariableMetric({ newMetric: e.value!.id, index }))}
                   options={previousMetrics}
                   value={pipelineVar.pipelineAgg}
                 />
@@ -97,6 +101,7 @@ export const BucketScriptSettingsEditor = ({ value, previousMetrics }: Props) =>
       <SettingField
         label="Script"
         metric={value}
+        inputType="textarea"
         settingName="script"
         tooltip="Elasticsearch v5.0 and above: Scripting language is Painless. Use params.<var> to reference a variable. Elasticsearch pre-v5.0: Scripting language is per default Groovy if not changed. For Groovy use <var> to reference a variable."
         placeholder="params.var1 / params.var2"

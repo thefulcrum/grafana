@@ -1,13 +1,14 @@
-import React from 'react';
 import { css, cx } from '@emotion/css';
+
 import { SelectableValue } from '@grafana/data';
 import { Segment } from '@grafana/ui';
-import { describeMetric } from '../utils';
-import { MetricAggregation } from './QueryEditor/MetricAggregationsEditor/aggregations';
 
-const noWrap = css`
-  white-space: nowrap;
-`;
+import { MetricAggregation } from '../dataquery.gen';
+import { describeMetric } from '../utils';
+
+const noWrap = css({
+  whiteSpace: 'nowrap',
+});
 
 const toOption = (metric: MetricAggregation) => ({
   label: describeMetric(metric),
@@ -32,7 +33,7 @@ export const MetricPicker = ({ options, onChange, className, value }: Props) => 
       options={toOptions(options)}
       onChange={onChange}
       placeholder="Select Metric"
-      value={!!selectedOption ? toOption(selectedOption) : null}
+      value={!!selectedOption ? toOption(selectedOption) : undefined}
     />
   );
 };

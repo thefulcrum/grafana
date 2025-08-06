@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { ChangeEvent, FunctionComponent, useEffect, useReducer, useState } from 'react';
 import { SelectableValue } from '@grafana/data';
 import { InlineFormLabel, Button } from '@grafana/ui/src/components';
@@ -7,10 +8,23 @@ import { AzureAuthType, AzureCredentials, isCredentialsComplete } from './AzureC
 
 export interface Props {
   managedIdentityEnabled: boolean;
+=======
+import { cx } from '@emotion/css';
+import { ChangeEvent, useMemo } from 'react';
+
+import { AzureAuthType, AzureCredentials } from '@grafana/azure-sdk';
+import { SelectableValue } from '@grafana/data';
+import { InlineFormLabel, Button, Select, Input } from '@grafana/ui';
+
+export interface Props {
+  managedIdentityEnabled: boolean;
+  workloadIdentityEnabled: boolean;
+>>>>>>> v12.1.0
   credentials: AzureCredentials;
   azureCloudOptions?: SelectableValue[];
   onCredentialsChange: (updatedCredentials: AzureCredentials) => void;
   getSubscriptions?: () => Promise<SelectableValue[]>;
+<<<<<<< HEAD
 }
 
 const authTypeOptions: Array<SelectableValue<AzureAuthType>> = [
@@ -83,48 +97,127 @@ export const AzureCredentialsForm: FunctionComponent<Props> = (props: Props) => 
         ...credentials,
         azureCloud: selected.value,
         defaultSubscriptionId: undefined,
+=======
+  disabled?: boolean;
+}
+
+export const AzureCredentialsForm = (props: Props) => {
+  const {
+    credentials,
+    azureCloudOptions,
+    onCredentialsChange,
+    disabled,
+    managedIdentityEnabled,
+    workloadIdentityEnabled,
+  } = props;
+
+  const authTypeOptions = useMemo(() => {
+    let opts: Array<SelectableValue<AzureAuthType>> = [
+      {
+        value: 'clientsecret',
+        label: 'App Registration',
+      },
+    ];
+
+    if (managedIdentityEnabled) {
+      opts.push({
+        value: 'msi',
+        label: 'Managed Identity',
+      });
+    }
+
+    if (workloadIdentityEnabled) {
+      opts.push({
+        value: 'workloadidentity',
+        label: 'Workload Identity',
+      });
+    }
+    return opts;
+  }, [managedIdentityEnabled, workloadIdentityEnabled]);
+
+  const onAuthTypeChange = (selected: SelectableValue<AzureAuthType>) => {
+    const defaultAuthType = managedIdentityEnabled
+      ? 'msi'
+      : workloadIdentityEnabled
+        ? 'workloadidentity'
+        : 'clientsecret';
+    const updated: AzureCredentials = {
+      ...credentials,
+      authType: selected.value || defaultAuthType,
+    };
+    onCredentialsChange(updated);
+  };
+
+  const onAzureCloudChange = (selected: SelectableValue<string>) => {
+    if (credentials.authType === 'clientsecret') {
+      const updated: AzureCredentials = {
+        ...credentials,
+        azureCloud: selected.value,
+>>>>>>> v12.1.0
       };
       onCredentialsChange(updated);
     }
   };
 
   const onTenantIdChange = (event: ChangeEvent<HTMLInputElement>) => {
+<<<<<<< HEAD
     if (onCredentialsChange && credentials.authType === 'clientsecret') {
       setSubscriptions([]);
       const updated: AzureCredentials = {
         ...credentials,
         tenantId: event.target.value,
         defaultSubscriptionId: undefined,
+=======
+    if (credentials.authType === 'clientsecret') {
+      const updated: AzureCredentials = {
+        ...credentials,
+        tenantId: event.target.value,
+>>>>>>> v12.1.0
       };
       onCredentialsChange(updated);
     }
   };
 
   const onClientIdChange = (event: ChangeEvent<HTMLInputElement>) => {
+<<<<<<< HEAD
     if (onCredentialsChange && credentials.authType === 'clientsecret') {
       setSubscriptions([]);
       const updated: AzureCredentials = {
         ...credentials,
         clientId: event.target.value,
         defaultSubscriptionId: undefined,
+=======
+    if (credentials.authType === 'clientsecret') {
+      const updated: AzureCredentials = {
+        ...credentials,
+        clientId: event.target.value,
+>>>>>>> v12.1.0
       };
       onCredentialsChange(updated);
     }
   };
 
   const onClientSecretChange = (event: ChangeEvent<HTMLInputElement>) => {
+<<<<<<< HEAD
     if (onCredentialsChange && credentials.authType === 'clientsecret') {
       setSubscriptions([]);
       const updated: AzureCredentials = {
         ...credentials,
         clientSecret: event.target.value,
         defaultSubscriptionId: undefined,
+=======
+    if (credentials.authType === 'clientsecret') {
+      const updated: AzureCredentials = {
+        ...credentials,
+        clientSecret: event.target.value,
+>>>>>>> v12.1.0
       };
       onCredentialsChange(updated);
     }
   };
 
   const onClientSecretReset = () => {
+<<<<<<< HEAD
     if (onCredentialsChange && credentials.authType === 'clientsecret') {
       setSubscriptions([]);
       const updated: AzureCredentials = {
@@ -141,6 +234,12 @@ export const AzureCredentialsForm: FunctionComponent<Props> = (props: Props) => 
       const updated: AzureCredentials = {
         ...credentials,
         defaultSubscriptionId: selected?.value,
+=======
+    if (credentials.authType === 'clientsecret') {
+      const updated: AzureCredentials = {
+        ...credentials,
+        clientSecret: '',
+>>>>>>> v12.1.0
       };
       onCredentialsChange(updated);
     }
@@ -148,18 +247,29 @@ export const AzureCredentialsForm: FunctionComponent<Props> = (props: Props) => 
 
   return (
     <div className="gf-form-group">
+<<<<<<< HEAD
       {props.managedIdentityEnabled && (
+=======
+      {authTypeOptions.length > 1 && (
+>>>>>>> v12.1.0
         <div className="gf-form-inline">
           <div className="gf-form">
             <InlineFormLabel className="width-12" tooltip="Choose the type of authentication to Azure services">
               Authentication
             </InlineFormLabel>
             <Select
+<<<<<<< HEAD
               menuShouldPortal
+=======
+>>>>>>> v12.1.0
               className="width-15"
               value={authTypeOptions.find((opt) => opt.value === credentials.authType)}
               options={authTypeOptions}
               onChange={onAuthTypeChange}
+<<<<<<< HEAD
+=======
+              isDisabled={disabled}
+>>>>>>> v12.1.0
             />
           </div>
         </div>
@@ -173,11 +283,18 @@ export const AzureCredentialsForm: FunctionComponent<Props> = (props: Props) => 
                   Azure Cloud
                 </InlineFormLabel>
                 <Select
+<<<<<<< HEAD
                   menuShouldPortal
+=======
+>>>>>>> v12.1.0
                   className="width-15"
                   value={azureCloudOptions.find((opt) => opt.value === credentials.azureCloud)}
                   options={azureCloudOptions}
                   onChange={onAzureCloudChange}
+<<<<<<< HEAD
+=======
+                  isDisabled={disabled}
+>>>>>>> v12.1.0
                 />
               </div>
             </div>
@@ -187,10 +304,18 @@ export const AzureCredentialsForm: FunctionComponent<Props> = (props: Props) => 
               <InlineFormLabel className="width-12">Directory (tenant) ID</InlineFormLabel>
               <div className="width-15">
                 <Input
+<<<<<<< HEAD
                   className="width-30"
                   placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
                   value={credentials.tenantId || ''}
                   onChange={onTenantIdChange}
+=======
+                  className={cx('width-20')}
+                  placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+                  value={credentials.tenantId || ''}
+                  onChange={onTenantIdChange}
+                  disabled={disabled}
+>>>>>>> v12.1.0
                 />
               </div>
             </div>
@@ -200,10 +325,18 @@ export const AzureCredentialsForm: FunctionComponent<Props> = (props: Props) => 
               <InlineFormLabel className="width-12">Application (client) ID</InlineFormLabel>
               <div className="width-15">
                 <Input
+<<<<<<< HEAD
                   className="width-30"
                   placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
                   value={credentials.clientId || ''}
                   onChange={onClientIdChange}
+=======
+                  className={cx('width-20')}
+                  placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+                  value={credentials.clientId || ''}
+                  onChange={onClientIdChange}
+                  disabled={disabled}
+>>>>>>> v12.1.0
                 />
               </div>
             </div>
@@ -211,6 +344,7 @@ export const AzureCredentialsForm: FunctionComponent<Props> = (props: Props) => 
           {typeof credentials.clientSecret === 'symbol' ? (
             <div className="gf-form-inline">
               <div className="gf-form">
+<<<<<<< HEAD
                 <InlineFormLabel className="width-12">Client Secret</InlineFormLabel>
                 <Input className="width-25" placeholder="configured" disabled={true} />
               </div>
@@ -221,6 +355,22 @@ export const AzureCredentialsForm: FunctionComponent<Props> = (props: Props) => 
                   </Button>
                 </div>
               </div>
+=======
+                <InlineFormLabel htmlFor="azure-client-secret" className="width-12">
+                  Client Secret
+                </InlineFormLabel>
+                <Input id="azure-client-secret" className={cx('width-20')} placeholder="configured" disabled />
+              </div>
+              {!disabled && (
+                <div className="gf-form">
+                  <div className={cx('max-width-20 gf-form-inline')}>
+                    <Button variant="secondary" type="button" onClick={onClientSecretReset}>
+                      reset
+                    </Button>
+                  </div>
+                </div>
+              )}
+>>>>>>> v12.1.0
             </div>
           ) : (
             <div className="gf-form-inline">
@@ -228,10 +378,18 @@ export const AzureCredentialsForm: FunctionComponent<Props> = (props: Props) => 
                 <InlineFormLabel className="width-12">Client Secret</InlineFormLabel>
                 <div className="width-15">
                   <Input
+<<<<<<< HEAD
                     className="width-30"
                     placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
                     value={credentials.clientSecret || ''}
                     onChange={onClientSecretChange}
+=======
+                    className={cx('width-20')}
+                    placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+                    value={credentials.clientSecret || ''}
+                    onChange={onClientSecretChange}
+                    disabled={disabled}
+>>>>>>> v12.1.0
                   />
                 </div>
               </div>
@@ -239,6 +397,7 @@ export const AzureCredentialsForm: FunctionComponent<Props> = (props: Props) => 
           )}
         </>
       )}
+<<<<<<< HEAD
       {getSubscriptions && (
         <>
           <div className="gf-form-inline">
@@ -275,6 +434,8 @@ export const AzureCredentialsForm: FunctionComponent<Props> = (props: Props) => 
           </div>
         </>
       )}
+=======
+>>>>>>> v12.1.0
     </div>
   );
 };

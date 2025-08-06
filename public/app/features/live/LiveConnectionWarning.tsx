@@ -1,9 +1,11 @@
 import { css } from '@emotion/css';
-import { GrafanaTheme2 } from '@grafana/data';
+import { PureComponent } from 'react';
+import { Unsubscribable } from 'rxjs';
+
+import { GrafanaTheme2, OrgRole } from '@grafana/data';
+import { t } from '@grafana/i18n';
 import { config, getGrafanaLiveSrv } from '@grafana/runtime';
 import { Alert, stylesFactory } from '@grafana/ui';
-import React, { PureComponent } from 'react';
-import { Unsubscribable } from 'rxjs';
 import { contextSrv } from 'app/core/services/context_srv';
 
 export interface Props {}
@@ -45,36 +47,33 @@ export class LiveConnectionWarning extends PureComponent<Props, State> {
   render() {
     const { show } = this.state;
     if (show) {
-      if (!contextSrv.isSignedIn || !config.liveEnabled) {
-        return null; // do not show the warning for anonymous users (and /login page etc)
+      if (!contextSrv.isSignedIn || !config.liveEnabled || contextSrv.user.orgRole === OrgRole.None) {
+        return null; // do not show the warning for anonymous users or ones with no org (and /login page etc)
       }
 
       return (
-        <div className={this.styles.foot}>
-          <Alert severity={'warning'} className={this.styles.warn} title="connection to server is lost..." />
-        </div>
+        <Alert
+          severity={'warning'}
+          className={this.styles.warn}
+          title={t(
+            'live.live-connection-warning.title-connection-to-server-is-lost',
+            'Connection to server is lost...'
+          )}
+        />
       );
     }
     return null;
   }
 }
 
-const getStyle = stylesFactory((theme: GrafanaTheme2) => {
-  return {
-    foot: css`
-      position: absolute;
-      bottom: 0px;
-      left: 0px;
-      right: 0px;
-      z-index: 10000;
-      cursor: wait;
-      margin: 16px;
-    `,
-    warn: css`
-      border: 2px solid ${theme.colors.warning.main};
-      max-width: 400px;
-      margin: auto;
-      height: 3em;
-    `,
-  };
-});
+const getStyle = stylesFactory((theme: GrafanaTheme2) => ({
+  warn: css({
+    position: 'fixed',
+    bottom: 0,
+    left: '50%',
+    transform: 'translate(-50%)',
+    maxWidth: '400px',
+    zIndex: theme.zIndex.portal,
+    cursor: 'wait',
+  }),
+}));

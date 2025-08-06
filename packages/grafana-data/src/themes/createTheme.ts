@@ -1,15 +1,15 @@
 import { createBreakpoints } from './breakpoints';
-import { createComponents } from './createComponents';
 import { createColors, ThemeColorsInput } from './createColors';
+import { createComponents } from './createComponents';
 import { createShadows } from './createShadows';
 import { createShape, ThemeShapeInput } from './createShape';
 import { createSpacing, ThemeSpacingOptions } from './createSpacing';
 import { createTransitions } from './createTransitions';
 import { createTypography, ThemeTypographyInput } from './createTypography';
 import { createV1Theme } from './createV1Theme';
+import { createVisualizationColors, ThemeVisualizationColorsInput } from './createVisualizationColors';
 import { GrafanaTheme2 } from './types';
 import { zIndex } from './zIndex';
-import { createVisualizationColors } from './createVisualizationColors';
 
 /** @internal */
 export interface NewThemeOptions {
@@ -18,16 +18,18 @@ export interface NewThemeOptions {
   spacing?: ThemeSpacingOptions;
   shape?: ThemeShapeInput;
   typography?: ThemeTypographyInput;
+  visualization?: ThemeVisualizationColorsInput;
 }
 
 /** @internal */
 export function createTheme(options: NewThemeOptions = {}): GrafanaTheme2 {
   const {
-    name = 'Dark',
+    name,
     colors: colorsInput = {},
     spacing: spacingInput = {},
     shape: shapeInput = {},
     typography: typographyInput = {},
+    visualization: visualizationInput = {},
   } = options;
 
   const colors = createColors(colorsInput);
@@ -38,10 +40,10 @@ export function createTheme(options: NewThemeOptions = {}): GrafanaTheme2 {
   const shadows = createShadows(colors);
   const transitions = createTransitions();
   const components = createComponents(colors, shadows);
-  const visualization = createVisualizationColors(colors);
+  const visualization = createVisualizationColors(colors, visualizationInput);
 
   const theme = {
-    name,
+    name: name ?? (colors.mode === 'dark' ? 'Dark' : 'Light'),
     isDark: colors.mode === 'dark',
     isLight: colors.mode === 'light',
     colors,
@@ -56,6 +58,7 @@ export function createTheme(options: NewThemeOptions = {}): GrafanaTheme2 {
     zIndex: {
       ...zIndex,
     },
+    flags: {},
   };
 
   return {

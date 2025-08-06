@@ -1,8 +1,10 @@
-import React, { createRef, MutableRefObject } from 'react';
-import uPlot, { Options } from 'uplot';
-import { PlotContext, PlotContextType } from './context';
-import { DEFAULT_PLOT_CONFIG, pluginLog } from './utils';
+import { Component, createRef } from 'react';
+import uPlot, { AlignedData, Options } from 'uplot';
+
 import { PlotProps } from './types';
+import { pluginLog } from './utils';
+
+import 'uplot/dist/uPlot.min.css';
 
 function sameDims(prevProps: PlotProps, nextProps: PlotProps) {
   return nextProps.width === prevProps.width && nextProps.height === prevProps.height;
@@ -17,7 +19,7 @@ function sameConfig(prevProps: PlotProps, nextProps: PlotProps) {
 }
 
 type UPlotChartState = {
-  ctx: PlotContextType;
+  plot: uPlot | null;
 };
 
 /**
@@ -26,67 +28,45 @@ type UPlotChartState = {
  * Receives a data frame that is x-axis aligned, as of https://github.com/leeoniya/uPlot/tree/master/docs#data-format
  * Exposes context for uPlot instance access
  */
-export class UPlotChart extends React.Component<PlotProps, UPlotChartState> {
+export class UPlotChart extends Component<PlotProps, UPlotChartState> {
   plotContainer = createRef<HTMLDivElement>();
   plotCanvasBBox = createRef<DOMRect>();
+  plotInstance: uPlot | null = null;
 
   constructor(props: PlotProps) {
     super(props);
-
-    this.state = {
-      ctx: {
-        plot: null,
-        getCanvasBoundingBox: () => {
-          return this.plotCanvasBBox.current;
-        },
-      },
-    };
   }
 
   reinitPlot() {
-    let { ctx } = this.state;
     let { width, height, plotRef } = this.props;
 
-    ctx.plot?.destroy();
+    this.plotInstance?.destroy();
 
     if (width === 0 && height === 0) {
       return;
     }
-
-    this.props.config.addHook('syncRect', (u, rect) => {
-      (this.plotCanvasBBox as MutableRefObject<any>).current = rect;
-    });
 
     this.props.config.addHook('setSize', (u) => {
       const canvas = u.over;
       if (!canvas) {
         return;
       }
-      (this.plotCanvasBBox as MutableRefObject<any>).current = canvas.getBoundingClientRect();
     });
 
     const config: Options = {
-      ...DEFAULT_PLOT_CONFIG,
-      width: this.props.width,
-      height: this.props.height,
-      ms: 1 as 1,
+      width: Math.floor(this.props.width),
+      height: Math.floor(this.props.height),
       ...this.props.config.getConfig(),
     };
 
     pluginLog('UPlot', false, 'Reinitializing plot', config);
-    const plot = new uPlot(config, this.props.data, this.plotContainer!.current!);
+    const plot = new uPlot(config, this.props.data as AlignedData, this.plotContainer!.current!);
 
     if (plotRef) {
       plotRef(plot);
     }
 
-    this.setState((s) => ({
-      ...s,
-      ctx: {
-        ...s.ctx,
-        plot,
-      },
-    }));
+    this.plotInstance = plot;
   }
 
   componentDidMount() {
@@ -94,40 +74,28 @@ export class UPlotChart extends React.Component<PlotProps, UPlotChartState> {
   }
 
   componentWillUnmount() {
-    this.state.ctx.plot?.destroy();
+    this.plotInstance?.destroy();
   }
 
   componentDidUpdate(prevProps: PlotProps) {
-    let { ctx } = this.state;
-
     if (!sameDims(prevProps, this.props)) {
-      ctx.plot?.setSize({
-        width: this.props.width,
-        height: this.props.height,
+      this.plotInstance?.setSize({
+        width: Math.floor(this.props.width),
+        height: Math.floor(this.props.height),
       });
     } else if (!sameConfig(prevProps, this.props)) {
       this.reinitPlot();
     } else if (!sameData(prevProps, this.props)) {
-      ctx.plot?.setData(this.props.data);
-
-      // this is a uPlot cache-busting hack for bar charts in case x axis labels changed
-      // since the x scale's "range" doesnt change, the axis size doesnt get recomputed, which is where the tick labels are regenerated & cached
-      // the more expensive, more proper/thorough way to do this is to force all axes to recalc: plot?.redraw(false, true);
-      if (ctx.plot && typeof this.props.data[0][0] === 'string') {
-        //@ts-ignore
-        ctx.plot.axes[0]._values = this.props.data[0];
-      }
+      this.plotInstance?.setData(this.props.data as AlignedData);
     }
   }
 
   render() {
     return (
-      <PlotContext.Provider value={this.state.ctx}>
-        <div style={{ position: 'relative' }}>
-          <div ref={this.plotContainer} data-testid="uplot-main-div" />
-          {this.props.children}
-        </div>
-      </PlotContext.Provider>
+      <div style={{ position: 'relative' }}>
+        <div ref={this.plotContainer} data-testid="uplot-main-div" />
+        {this.props.children}
+      </div>
     );
   }
 }

@@ -1,69 +1,149 @@
-import React, { useCallback, useMemo } from 'react';
-import { Button, GraphNGLegendEvent, TimeSeries, TooltipPlugin } from '@grafana/ui';
-import { PanelProps } from '@grafana/data';
-import { Options } from './types';
-import { hideSeriesConfigFactory } from '../timeseries/overrides/hideSeriesConfigFactory';
-import { getXYDimensions } from './dims';
+import { css } from '@emotion/css';
+import { useMemo } from 'react';
 
-interface XYChartPanelProps extends PanelProps<Options> {}
+import { colorManipulator, FALLBACK_COLOR, PanelProps } from '@grafana/data';
+import { config } from '@grafana/runtime';
+import {
+  TooltipDisplayMode,
+  TooltipPlugin2,
+  UPlotChart,
+  VizLayout,
+  VizLegend,
+  VizLegendItem,
+  useStyles2,
+  useTheme2,
+} from '@grafana/ui';
+import { getDisplayValuesForCalcs, TooltipHoverMode } from '@grafana/ui/internal';
 
-export const XYChartPanel: React.FC<XYChartPanelProps> = ({
-  data,
-  timeRange,
-  timeZone,
-  width,
-  height,
-  options,
-  fieldConfig,
-  onFieldConfigChange,
-}) => {
-  const dims = useMemo(() => getXYDimensions(options.dims, data.series), [options.dims, data.series]);
+import { getDataLinks } from '../status-history/utils';
 
-  const frames = useMemo(() => [dims.frame], [dims]);
+import { XYChartTooltip } from './XYChartTooltip';
+import { Options } from './panelcfg.gen';
+import { prepConfig } from './scatter';
+import { prepSeries } from './utils';
 
-  const onLegendClick = useCallback(
-    (event: GraphNGLegendEvent) => {
-      onFieldConfigChange(hideSeriesConfigFactory(event, fieldConfig, frames));
-    },
-    [fieldConfig, onFieldConfigChange, frames]
+type Props2 = PanelProps<Options>;
+
+export const XYChartPanel2 = (props: Props2) => {
+  const styles = useStyles2(getStyles);
+  const theme = useTheme2();
+
+  let { mapping, series: mappedSeries } = props.options;
+
+  // regenerate series schema when mappings or data changes
+  let series = useMemo(
+    () => prepSeries(mapping, mappedSeries, props.data.series, props.fieldConfig),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mapping, mappedSeries, props.data.series, props.fieldConfig]
   );
 
-  if (dims.error) {
+  // if series changed due to mappings or data structure, re-init config & renderers
+  let { builder, prepData } = useMemo(
+    () => prepConfig(series, config.theme2),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mapping, mappedSeries, props.data.structureRev, props.fieldConfig, props.options.tooltip]
+  );
+
+  // generate data struct for uPlot mode: 2
+  let data = useMemo(
+    () => prepData(series),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [series]
+  );
+
+  // todo: handle errors
+  let error = builder == null || data.length === 0 ? 'Err' : '';
+
+  // TODO: React.memo()
+  const renderLegend = () => {
+    if (!props.options.legend.showLegend) {
+      return null;
+    }
+
+    const items: VizLegendItem[] = [];
+
+    series.forEach((s, idx) => {
+      let yField = s.y.field;
+      let config = yField.config;
+      let custom = config.custom;
+
+      if (!custom.hideFrom?.legend) {
+        items.push({
+          yAxis: 1, // TODO: pull from y field
+          label: s.name.value,
+          color: colorManipulator.alpha(s.color.fixed ?? FALLBACK_COLOR, 1),
+          getItemKey: () => `${idx}-${s.name.value}`,
+          fieldName: yField.state?.displayName ?? yField.name,
+          disabled: yField.state?.hideFrom?.viz ?? false,
+          getDisplayValues: () => getDisplayValuesForCalcs(props.options.legend.calcs, yField, theme),
+        });
+      }
+    });
+
+    const { placement, displayMode, width, sortBy, sortDesc } = props.options.legend;
+
     return (
-      <div>
-        <div>ERROR: {dims.error}</div>
-        {dims.hasData && (
-          <div>
-            <Button onClick={() => alert('TODO, switch vis')}>Show as Table</Button>
-            {dims.hasTime && <Button onClick={() => alert('TODO, switch vis')}>Show as Time series</Button>}
-          </div>
-        )}
+      <VizLayout.Legend placement={placement} width={width}>
+        <VizLegend
+          className={styles.legend}
+          placement={placement}
+          items={items}
+          displayMode={displayMode}
+          sortBy={sortBy}
+          sortDesc={sortDesc}
+          isSortable={true}
+        />
+      </VizLayout.Legend>
+    );
+  };
+
+  if (error) {
+    return (
+      <div className="panel-empty">
+        <p>{error}</p>
       </div>
     );
   }
 
   return (
-    <TimeSeries
-      frames={frames}
-      structureRev={data.structureRev}
-      fields={dims.fields}
-      timeRange={timeRange}
-      timeZone={timeZone}
-      width={width}
-      height={height}
-      legend={options.legend}
-      onLegendClick={onLegendClick}
-    >
-      {(config, alignedDataFrame) => {
-        return (
-          <TooltipPlugin
-            config={config}
-            data={alignedDataFrame}
-            mode={options.tooltip.mode as any}
-            timeZone={timeZone}
-          />
-        );
-      }}
-    </TimeSeries>
+    <VizLayout width={props.width} height={props.height} legend={renderLegend()}>
+      {(vizWidth: number, vizHeight: number) => (
+        <UPlotChart config={builder!} data={data} width={vizWidth} height={vizHeight}>
+          {props.options.tooltip.mode !== TooltipDisplayMode.None && (
+            <TooltipPlugin2
+              config={builder!}
+              hoverMode={TooltipHoverMode.xyOne}
+              getDataLinks={(seriesIdx, dataIdx) => {
+                const xySeries = series[seriesIdx - 1];
+                return getDataLinks(xySeries.y.field, dataIdx);
+              }}
+              render={(u, dataIdxs, seriesIdx, isPinned, dismiss, timeRange2, viaSync, dataLinks) => {
+                return (
+                  <XYChartTooltip
+                    data={props.data.series}
+                    dataIdxs={dataIdxs}
+                    xySeries={series}
+                    dismiss={dismiss}
+                    isPinned={isPinned}
+                    seriesIdx={seriesIdx!}
+                    replaceVariables={props.replaceVariables}
+                    dataLinks={dataLinks}
+                  />
+                );
+              }}
+              maxWidth={props.options.tooltip.maxWidth}
+            />
+          )}
+        </UPlotChart>
+      )}
+    </VizLayout>
   );
 };
+
+const getStyles = () => ({
+  legend: css({
+    div: {
+      justifyContent: 'flex-start',
+    },
+  }),
+});
