@@ -3,6 +3,9 @@ import { FC } from 'react';
 
 import { colorManipulator } from '@grafana/data';
 import { useTheme2 } from '@grafana/ui';
+import g8LoginDarkSvg from 'img/g8_login_dark.svg';
+import g8LoginLightSvg from 'img/g8_login_light.svg';
+import n3LogoPng from 'img/n3-logo.png'; // ✅ our company logo
 
 export interface BrandComponentProps {
   className?: string;
@@ -10,7 +13,7 @@ export interface BrandComponentProps {
 }
 
 export const LoginLogo: FC<BrandComponentProps & { logo?: string }> = ({ className, logo }) => {
-  return <img className={className} src={`${logo ? logo : 'public/img/grafana_icon.svg'}`} alt="Grafana" />;
+  return <img className={className} src={logo ? logo : n3LogoPng} alt="n3Hub CDP" />;
 };
 
 const LoginBackground: FC<BrandComponentProps> = ({ className, children }) => {
@@ -24,14 +27,12 @@ const LoginBackground: FC<BrandComponentProps> = ({ className, children }) => {
       right: 0,
       bottom: 0,
       top: 0,
-      background: `url(public/img/g8_login_${theme.isDark ? 'dark' : 'light'}.svg)`,
+      background: `url(${theme.isDark ? g8LoginDarkSvg : g8LoginLightSvg})`,
       backgroundPosition: 'top center',
       backgroundSize: 'auto',
       backgroundRepeat: 'no-repeat',
-
       opacity: 0,
       transition: 'opacity 3s ease-in-out',
-
       [theme.breakpoints.up('md')]: {
         backgroundPosition: 'center',
         backgroundSize: 'cover',
@@ -43,7 +44,7 @@ const LoginBackground: FC<BrandComponentProps> = ({ className, children }) => {
 };
 
 const MenuLogo: FC<BrandComponentProps> = ({ className }) => {
-  return <img className={className} src="public/img/grafana_icon.svg" alt="Grafana" />;
+  return <img className={className} src={n3LogoPng} alt="n3Hub CDP" />;
 };
 
 const LoginBoxBackground = () => {
@@ -59,8 +60,8 @@ export class Branding {
   static LoginBackground = LoginBackground;
   static MenuLogo = MenuLogo;
   static LoginBoxBackground = LoginBoxBackground;
-  static AppTitle = 'Grafana';
-  static LoginTitle = 'Welcome to Grafana';
+  static AppTitle = 'n3Hub CDP'; // ✅ company title
+  static LoginTitle = 'Welcome to n3Hub CDP'; // ✅ login title
   static HideEdition = false;
   static GetLoginSubTitle = (): null | string => {
     return null;
