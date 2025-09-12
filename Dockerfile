@@ -17,7 +17,7 @@ ARG JS_SRC=js-builder
 FROM alpine:3.21.3 AS alpine-base
 FROM ubuntu:22.04 AS ubuntu-base
 FROM golang:1.24.4-alpine AS go-builder-base
-FROM --platform=${JS_PLATFORM} node:22-alpine AS js-builder-base
+FROM --platform=${JS_PLATFORM} node:24-alpine AS js-builder-base
 
 # Javascript build stage
 FROM --platform=${JS_PLATFORM} ${JS_IMAGE} AS js-builder
@@ -45,8 +45,11 @@ COPY emails emails
 ENV NODE_ENV=production
 RUN yarn build
 
+
 # Golang build stage
-FROM ${GO_IMAGE} AS go-builder
+
+FROM golang:1.16-alpine3.14 as go-builder
+
 
 ARG COMMIT_SHA=""
 ARG BUILD_BRANCH=""
