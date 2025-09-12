@@ -12,8 +12,13 @@ export interface BrandComponentProps {
   children?: JSX.Element | JSX.Element[];
 }
 
+<<<<<<< Updated upstream
 export const LoginLogo: FC<BrandComponentProps & { logo?: string }> = ({ className, logo }) => {
   return <img className={className} src={`${logo ? logo : grafanaIconSvg}`} alt="Grafana" />;
+=======
+const LoginLogo: FC<BrandComponentProps> = ({ className }) => {
+  return <img className={className} src="public/img/n3-logo.png" alt="n3Hub CDP" />;
+>>>>>>> Stashed changes
 };
 
 const LoginBackground: FC<BrandComponentProps> = ({ className, children }) => {
@@ -46,7 +51,9 @@ const LoginBackground: FC<BrandComponentProps> = ({ className, children }) => {
 };
 
 const MenuLogo: FC<BrandComponentProps> = ({ className }) => {
-  return <img className={className} src={grafanaIconSvg} alt="Grafana" />;
+
+  return <img className={className} src="public/img/n3-logo.png" alt="n3Hub CDP" />;
+
 };
 
 const LoginBoxBackground = () => {
