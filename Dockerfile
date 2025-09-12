@@ -45,8 +45,11 @@ COPY emails emails
 ENV NODE_ENV=production
 RUN yarn build
 
+
 # Golang build stage
-FROM ${GO_IMAGE} AS go-builder
+
+FROM golang:1.16-alpine3.14 as go-builder
+
 
 ARG COMMIT_SHA=""
 ARG BUILD_BRANCH=""
